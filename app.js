@@ -112,8 +112,9 @@
       }
       if (cv === cur) syncLive(c); else c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W') w.style.height = '0px'; });
     }
-    requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); updateHint(); });
-    setTimeout(() => { if (cur) syncDet(canv[cur]); updateHint(); }, 480);
+    motion(520);
+    requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); });
+    setTimeout(() => { if (cur) syncDet(canv[cur]); updateHint(); }, 540);
   }
   // after the wrinkle rows unfold, keep them in view
   function revealWrinkles() {
@@ -225,8 +226,7 @@
   function setDet(i) {
     i = Math.max(0, Math.min(2, i));
     if (i === S.det) { syncDet(canv[cur]); return; }
-    S.det = i; syncDet(canv[cur]);
-    setTimeout(updateHint, 480);
+    S.det = i; motion(520); syncDet(canv[cur]);
   }
 
   let swallowClick = false;
@@ -311,7 +311,7 @@
   // bring an off-screen hint target into view: lists right away; pages are left for the user to scroll
   let revealTag = '', autoScrollUntil = 0;
   function smoothTo(box, top) {
-    autoScrollUntil = Date.now() + 900;
+    autoScrollUntil = Date.now() + 900; motion(900);
     if ('scrollBehavior' in document.documentElement.style) box.scrollTo({ top, behavior: 'smooth' });
     else box.scrollTop = top;
   }
@@ -327,9 +327,19 @@
     }
   }
 
-  let scrolling = false, scrollTimer = null;
+  // hints only show on a still page: any scroll, finger drag or page/state transition hides them,
+  // and they come back once nothing has moved for QUIET ms
+  const QUIET = 450;
+  let scrolling = false, scrollTimer = null, quietUntil = 0, quietTimer = null;
+  function motion(ms = QUIET) {
+    quietUntil = Math.max(quietUntil, Date.now() + ms);
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(updateHint, quietUntil - Date.now() + 20);
+    const l = cur && canv[cur].querySelector('.hint-layer'); if (l) l.classList.remove('hint-on');
+  }
   function updateHint() {
     if (!cur) return;
+    if (scrolling || drag || Date.now() < quietUntil) { const l = canv[cur].querySelector('.hint-layer'); if (l) l.classList.remove('hint-on'); return; }
     for (const cv in canv) if (cv !== cur) { const l = canv[cv].querySelector('.hint-layer'); if (l) l.classList.remove('hint-on'); }
     const c = canv[cur], layer = c.querySelector('.hint-layer'), dot = layer.querySelector('.hint');
     const t = hintTarget(c);
@@ -358,8 +368,14 @@
   document.addEventListener('scroll', () => {
     if (!scrolling) { scrolling = true; updateHint(); }
     clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => { scrolling = false; updateHint(); }, 260);
+    scrollTimer = setTimeout(() => { scrolling = false; motion(); }, 160);
   }, true);
+  // a finger moving on the page counts as motion even before the page starts scrolling
+  let touchY = null;
+  document.addEventListener('touchstart', e => { touchY = e.touches[0] ? e.touches[0].clientY : null; }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    const t = e.touches[0]; if (t && touchY !== null && Math.abs(t.clientY - touchY) > 6) motion();
+  }, { passive: true });
   setInterval(() => { if (!scrolling && !drag) updateHint(); }, 700);   // safety net (fonts, late layout, rotation)
   window.addEventListener('resize', layout);
   window.addEventListener('orientationchange', () => setTimeout(layout, 120));

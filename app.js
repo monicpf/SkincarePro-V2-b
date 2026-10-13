@@ -134,6 +134,7 @@
 
   // ---------- navigation ----------
   function go(screen, opts = {}) {
+    if (screen === 'detail') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; });
     S.screen = screen;
     if (opts.rec) S.rec = opts.rec;
     if (opts.filter) S.filter = opts.filter;
@@ -184,8 +185,12 @@
     if (S.screen === 'take') return true;
     if (S.screen === 'result' && (isBack(name) || isHome(name))) return true;   // disabled on the result page
     if (isBack(name)) {
-      // Report / concern detail / Recommendation go back to the analysis result; elsewhere back restarts from the photo
-      if (/^(report|detail|rec)$/.test(S.screen)) { S.screen = 'result'; S.dd = false; apply(true); }
+      // Report / Recommendation go back to the analysis result; elsewhere back restarts from the photo
+      if (S.screen === 'detail') {   // concern detail goes back to the report, where the user left it
+        S.screen = 'report'; S.dd = false; apply(false);
+        document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.scrollTop = +(sr.dataset.keep || 0); });
+      }
+      else if (/^(report|rec)$/.test(S.screen)) { S.screen = 'result'; S.dd = false; apply(true); }
       else startTake();
       return true;
     }

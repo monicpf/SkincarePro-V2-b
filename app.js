@@ -47,6 +47,11 @@
 
   // measurements that only work on the visible canvas
   function syncLive(c) {
+    const rf = c.querySelector('.result-frame');
+    if (rf) {   // height difference between the open and collapsed product shelf drives the slide
+      const o = rf.querySelector('.shelf-o'), k = rf.querySelector('.shelf-c');
+      if (o && k && o.offsetHeight) rf.style.setProperty('--shelf-d', (o.offsetHeight - k.offsetHeight) + 'px');
+    }
     c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' ? w.scrollHeight + 'px' : '0px'; });
     syncDet(c);
   }
@@ -80,6 +85,11 @@
       c.classList.toggle('f-red', S.filter === 'redness');
       c.querySelectorAll(':scope > .screen').forEach(sc => {
         const on = sc.dataset.screen === key;
+        if (sc.classList.contains('active') && !on) {          // keep the old page under the new one while it fades in
+          sc.classList.add('leaving'); clearTimeout(sc._lv);
+          sc._lv = setTimeout(() => sc.classList.remove('leaving'), 420);
+        }
+        if (on) { clearTimeout(sc._lv); sc.classList.remove('leaving'); }
         sc.classList.toggle('active', on);
         if (on && resetScroll) { const sr = sc.querySelector('.scroller'); if (sr) sr.scrollTop = 0; }
       });

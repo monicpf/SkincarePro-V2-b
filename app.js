@@ -192,9 +192,9 @@
     if (S.screen === 'result') {
       if (el.classList && el.classList.contains('dd-row')) {
         if (el.dataset.mode === 'focus' && S.rs !== 'W') return true;   // focus needs a selected concern
-        S.mode = el.dataset.mode; advance(1); modeAt = Date.now(); apply(); setTimeout(updateHint, 3050); return true;   // dropdown stays open
+        S.mode = el.dataset.mode; advance(1); if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true;   // dropdown stays open
       }
-      if (isGlasses(name)) { S.dd = !S.dd; apply(); return true; }
+      if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
       if (name === 'handelr') { S.shelf = !S.shelf; apply(); return true; }
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
@@ -291,8 +291,8 @@
   function stepTarget(i, sc) {
     switch (i) {
       case 0: return S.rs === 'C' ? firstVis(sc, '.wr-x > :first-child') : null;
-      case 1: return S.dd ? firstVis(sc, '.dd-row:not(.sel):not([data-mode="focus"]), .result-frame.s-W .dd-row[data-mode="focus"]:not(.sel)') : firstVis(sc, '[data-name^="btn_skincarepro_compare_s"], [data-name^="btn_skincarepro_previewmodes"]');
-      case 2: return (Date.now() - modeAt >= 3000) ? firstVis(sc, '[data-name="btn_view_report"]') : null;
+      case 1: if (modeAt && Date.now() - modeAt >= 2000) return null; return S.dd ? firstVis(sc, '.dd-row:not(.sel):not([data-mode="focus"]), .result-frame.s-W .dd-row[data-mode="focus"]:not(.sel)') : firstVis(sc, '[data-name^="btn_skincarepro_compare_s"], [data-name^="btn_skincarepro_previewmodes"]');
+      case 2: return (modeAt && Date.now() - modeAt >= 2000) ? firstVis(sc, '[data-name="btn_view_report"]') : null;
       case 3: return firstVis(sc, '[data-name="concern_card_Redness"]');
       case 4: return firstVis(sc, '.dp-on [data-name="btn_matching_products"]');
       case 5: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');

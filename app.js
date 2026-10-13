@@ -68,9 +68,14 @@
     sc.querySelectorAll('.dtab').forEach((t, i) => t.classList.toggle('dt-on', i === S.det));
     const on = sc.querySelector('.dtab.dt-on'), ul = sc.querySelector('.det-ul');
     if (on && ul && ul.offsetParent && on.offsetWidth) {
-      const s = c._s || 1, a = on.getBoundingClientRect(), b = ul.offsetParent.getBoundingClientRect();
-      ul.style.left = ((a.left - b.left) / s) + 'px';
-      ul.style.width = (a.width / s) + 'px';
+      const s = c._s || 1, b = ul.offsetParent.getBoundingClientRect();
+      // size to the text itself (widest line), not the label's block box
+      const rg = document.createRange(); rg.selectNodeContents(on);
+      let l = 1e9, r = -1e9;
+      [...rg.getClientRects()].forEach(q => { if (q.width) { l = Math.min(l, q.left); r = Math.max(r, q.right); } });
+      if (r < l) { const a = on.getBoundingClientRect(); l = a.left; r = a.right; }
+      ul.style.left = ((l - b.left) / s) + 'px';
+      ul.style.width = ((r - l) / s) + 'px';
     }
     const ov = sc.querySelector('.det-ov'); if (ov) ov.classList.toggle('fm-on', S.fm);
     sc.querySelectorAll('.vt-opt').forEach(o => o.classList.toggle('vt-on', (o.dataset.name === 'opt_Focus') === S.fm));

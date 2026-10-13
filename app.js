@@ -133,8 +133,12 @@
   }
 
   // ---------- navigation ----------
+  function backToReport() {
+    S.screen = 'report'; S.dd = false; apply(false);
+    document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.scrollTop = +(sr.dataset.keep || 0); });
+  }
   function go(screen, opts = {}) {
-    if (screen === 'detail') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; });
+    if (S.screen === 'report') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; });
     S.screen = screen;
     if (opts.rec) S.rec = opts.rec;
     if (opts.filter) S.filter = opts.filter;
@@ -185,16 +189,13 @@
     if (S.screen === 'take') return true;
     if (S.screen === 'result' && (isBack(name) || isHome(name))) return true;   // disabled on the result page
     if (isBack(name)) {
-      // Report / Recommendation go back to the analysis result; elsewhere back restarts from the photo
-      if (S.screen === 'detail') {   // concern detail goes back to the report, where the user left it
-        S.screen = 'report'; S.dd = false; apply(false);
-        document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.scrollTop = +(sr.dataset.keep || 0); });
-      }
-      else if (/^(report|rec)$/.test(S.screen)) { S.screen = 'result'; S.dd = false; apply(true); }
-      else startTake();
+      // Report goes back to the analysis result
+      if (S.screen === 'detail' || S.screen === 'rec') backToReport();   // concern detail / recommendation go back to the report
+      else if (S.screen === 'report') { S.screen = 'result'; S.dd = false; apply(true); }
+      else startTake();   // Download Report: start over with a new photo
       return true;
     }
-    if (isHome(name)) { startTake(); return true; }
+    if (isHome(name)) { if (S.screen === 'share') startTake(); else { S.screen = 'result'; S.dd = false; apply(true); } return true; }   // only Download Report's Home restarts the camera
     if (S.screen === 'result') {
       if (el.classList && el.classList.contains('dd-row')) {
         if (el.dataset.mode === 'focus' && S.rs !== 'W') return true;   // focus needs a selected concern

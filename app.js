@@ -195,7 +195,7 @@
       else startTake();   // Download Report: start over with a new photo
       return true;
     }
-    if (isHome(name)) { if (S.screen === 'share') startTake(); else { S.screen = 'result'; S.dd = false; apply(true); } return true; }   // only Download Report's Home restarts the camera
+    if (isHome(name)) { if (S.screen === 'share') startTake(); return true; }   // Home only works on Download Report (restarts the camera); elsewhere it would open the landing page, not part of this demo
     if (S.screen === 'result') {
       if (el.classList && el.classList.contains('dd-row')) {
         if (el.dataset.mode === 'focus' && S.rs !== 'W') return true;   // focus needs a selected concern

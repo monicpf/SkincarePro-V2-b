@@ -14,7 +14,7 @@
 
   const screenKey = () => {
     if (S.screen !== 'rec') return S.screen;
-    if (S.rec === 'products') return S.filter === 'redness' ? 'recRed' : 'recAll';
+    if (S.rec === 'products') return S.filter !== 'all' ? 'recRed' : 'recAll';
     return S.rec;
   };
   const photoKey = () => {
@@ -51,9 +51,73 @@
     if (rf) {   // height difference between the open and collapsed product shelf drives the slide
       const o = rf.querySelector('.shelf-o'), k = rf.querySelector('.shelf-c');
       if (o && k && o.offsetHeight) rf.style.setProperty('--shelf-d', (o.offsetHeight - k.offsetHeight) + 'px');
+      if (o && k && o.offsetHeight) {   // concerns list never runs under the real shelf (its fade would be cut off)
+        const H = rf.offsetHeight, cs = getComputedStyle(rf);
+        if (!rf.dataset.cbo) { rf.dataset.cbo = parseFloat(cs.getPropertyValue('--cb-o')) || 0; rf.dataset.cbc = parseFloat(cs.getPropertyValue('--cb-c')) || 0; }
+        rf.style.setProperty('--cb-o', Math.max(+rf.dataset.cbo, H - o.offsetTop) + 'px');
+        rf.style.setProperty('--cb-c', Math.max(+rf.dataset.cbc, H - k.offsetTop) + 'px');
+      }
+      const ag = rf.querySelector('.score-blk');   // Skin Age keeps a 20px gap above the shelf, open or collapsed
+      if (ag && o && k && o.offsetHeight) { ag.style.top = (o.offsetTop - ag.offsetHeight - 20) + 'px'; ag.style.setProperty('--sc-d', (k.offsetTop - o.offsetTop) + 'px'); }
     }
     c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' ? w.scrollHeight + 'px' : '0px'; });
     syncDet(c);
+  }
+
+  // concern filter chips: highlight the active one and name it in the list header
+  function syncChips(c) {
+    const on = S.filter === 'all' ? 'chip_All' : 'chip_' + S.filter;
+    c.querySelectorAll('.chiprow [data-name^="chip_"]').forEach(ch => ch.classList.toggle('chip-on', ch.getAttribute('data-name') === on));
+    recFill(c);
+  }
+  // recommendation lists: demo data reshuffled per concern (repeated items, different counts) and animated in
+  const REC_IT = '[data-name^="product_"],[data-name^="step_"],[data-name^="treatment_"]';
+  const NOT_IT = /^(treatment_(nonsurgical|surgical|grid)|product_grid)/;
+  const isItem = el => { const n = el.getAttribute('data-name') || ''; return /^(product_|step_|treatment_)/.test(n) && !NOT_IT.test(n); };
+  function recGroups(sc) {
+    if (sc._rg) return sc._rg;
+    const m = new Map();
+    sc.querySelectorAll(REC_IT).forEach(el => {
+      if (!isItem(el)) return;
+      const up = el.parentElement.closest(REC_IT);
+      if (up && isItem(up)) return;   // a product inside a routine step
+      if (!m.has(el.parentElement)) m.set(el.parentElement, []);
+      m.get(el.parentElement).push(el);
+    });
+    sc._rg = [...m].map(([p, its]) => ({ p, its: its.map(x => x.cloneNode(true)), kind: its[0].getAttribute('data-name').split('_')[0] }));
+    return sc._rg;
+  }
+  function recFill(c) {
+    const f = S.filter;
+    if (c._rf === f) return;
+    const first = c._rf === undefined; c._rf = f;
+    const ORDER = ['Redness', 'Droopy Lower Eyelid', 'Oiliness', 'Spots', 'Dark Circle', 'Droopy Upper Eyelid', 'Tear Trough', 'Pores',
+                   'Moisture', 'Wrinkles', 'Texture', 'Eye Bag', 'Firmness', 'Radiance', 'Acne'];
+    const NP = [4, 3, 5, 2, 6, 3, 5, 4, 6, 2, 5, 3, 4, 6, 2];
+    const TR = [6, 4, 7, 5, 3, 6, 4, 7, 5, 3, 6, 4, 7, 5, 3];   // routine steps (morning + night)
+    const TT = [4, 6, 3, 7, 2, 5, 8, 3, 6, 4, 7, 2, 5, 8, 3];   // treatments (non-surgical + surgical)
+    const PERM = [[0, 1, 2, 3], [2, 0, 3, 1], [3, 2, 1, 0], [1, 3, 0, 2], [2, 3, 0, 1], [3, 0, 2, 1], [1, 2, 3, 0]];
+    const MASK = { 4: [[0, 1, 2, 3]], 3: [[0, 2, 3], [0, 1, 3], [1, 2, 3], [0, 1, 2]], 2: [[0, 3], [0, 2], [1, 3], [0, 1]], 1: [[0], [2], [1], [3]] };
+    const split = (t, i) => { const a = Math.min(4, Math.ceil(t / 2)); return i === 0 ? a : Math.max(1, t - a); };
+    const ix = Math.max(0, ORDER.indexOf(f));
+    c.querySelectorAll('section[data-screen="recRed"],section[data-screen="routines"],section[data-screen="treatments"]').forEach(sc => {
+      const key = sc.dataset.screen, gs = recGroups(sc);
+      if (first && f === 'all') return;
+      let tot = 0;
+      gs.forEach((g, i) => {
+        const T = g.its; let list = [];
+        const P = PERM[(ix + i * 3) % PERM.length], pick = n => { const r = []; for (let k = 0; k < n; k++) r.push(T[P[k % P.length] % T.length]); return r; };
+        if (f === 'all') list = T;
+        else if (g.kind === 'product') list = pick(NP[ix]);
+        else if (g.kind === 'step') { const n = split(TR[ix], i), ms = MASK[n]; list = ms[(ix + i) % ms.length].filter(k => k < T.length).map(k => T[k]); }
+        else list = pick(split(TT[ix], i));
+        [...g.p.children].forEach(x => { if (isItem(x)) x.remove(); });
+        list.forEach((t, k) => { const el = t.cloneNode(true); el.classList.add('rec-in'); el.style.animationDelay = (k * 60) + 'ms'; g.p.appendChild(el); });
+        tot += list.length;
+      });
+      const p = sc.querySelector('[data-name="result_count"] p');
+      if (p) { if (!p.dataset.o) p.dataset.o = p.textContent; p.textContent = f === 'all' ? p.dataset.o : f + '  ·  ' + tot + ' ' + (key === 'recRed' ? 'products' : key); }
+    });
   }
 
   // concern detail: tab pager
@@ -88,7 +152,8 @@
     if (S.mode === 'focus' && S.rs !== 'W') S.mode = 'analysis';
     for (const cv in canv) {
       const c = canv[cv];
-      c.classList.toggle('f-red', S.filter === 'redness');
+      c.classList.toggle('f-red', S.filter !== 'all');
+      syncChips(c);
       c.querySelectorAll(':scope > .screen').forEach(sc => {
         const on = sc.dataset.screen === key;
         if (sc.classList.contains('active') && !on) {          // keep the old page under the new one while it fades in
@@ -216,7 +281,7 @@
       return false;
     }
     if (name === 'concern_card_Redness') { advance(3); go('detail'); return true; }
-    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: 'redness' }); return true; }
+    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: 'Redness' }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
     if (name === 'tab_Get Report') { advance(5); if (S.screen !== 'share') go('share'); return true; }
@@ -230,8 +295,12 @@
       if (/^tab_Products/.test(name)) { S.rec = 'products'; apply(true); return true; }
       if (/^tab_Routines/.test(name)) { S.rec = 'routines'; apply(true); return true; }
       if (/^tab_Treatments/.test(name)) { S.rec = 'treatments'; apply(true); return true; }
-      if (/^chip_All/.test(name)) { if (S.filter !== 'all') { S.filter = 'all'; apply(S.rec === 'products'); } return true; }
-      if (/^chip_Redness/.test(name)) { if (S.filter !== 'redness') { S.filter = 'redness'; apply(S.rec === 'products'); } return true; }
+      const cm = /^chip_(.+)$/.exec(name);
+      if (cm) {   // every concern chip filters (products list is shared demo data)
+        const f = cm[1] === 'All' ? 'all' : cm[1];
+        if (S.filter !== f) { const flip = (S.filter === 'all') !== (f === 'all'); S.filter = f; apply(S.rec === 'products' && flip); }
+        return true;
+      }
     }
     return false;
   }
@@ -253,6 +322,37 @@
       n = n.parentElement;
     }
   });
+
+  // product shelf: tap the handle area or drag it down / up to collapse / open
+  let sd = null;
+  document.addEventListener('pointerdown', e => {
+    if (S.screen !== 'result') return;
+    const sh = e.target.closest && e.target.closest('.result-frame .shelf.cur');
+    if (!sh) return;
+    const s = canv[cur]._s || 1, zone = (cur === 'm' ? 44 : 96) * s;
+    if (e.clientY - sh.getBoundingClientRect().top > zone) return;
+    sd = { y: e.clientY, sh, id: e.pointerId, on: false };
+  });
+  document.addEventListener('pointermove', e => {
+    if (!sd || e.pointerId !== sd.id) return;
+    const dy = (e.clientY - sd.y) / (canv[cur]._s || 1);
+    if (!sd.on) { if (Math.abs(dy) < 8) return; sd.on = true; sd.sh.style.transition = 'none'; }
+    const v = S.shelf ? Math.max(0, dy) : Math.min(0, dy * 0.4);
+    sd.sh.style.transform = `translateY(${v}px)`;
+  });
+  const endShelf = e => {
+    if (!sd || (e && e.pointerId !== sd.id)) return;
+    const d = sd; sd = null;
+    d.sh.style.transition = ''; d.sh.style.transform = '';
+    if (!d.on) return;
+    swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
+    const dy = ((e ? e.clientY : d.y) - d.y) / (canv[cur]._s || 1);
+    if (S.shelf && dy > 40) { S.shelf = false; apply(); }
+    else if (!S.shelf && dy < -40) { S.shelf = true; apply(); }
+  };
+  document.addEventListener('dragstart', e => { if (e.target.closest && e.target.closest('.shelf')) e.preventDefault(); });   // native image drag would cancel the pointer drag
+  document.addEventListener('pointerup', endShelf);
+  document.addEventListener('pointercancel', endShelf);
 
   // swipe between the concern-detail tabs
   let drag = null;

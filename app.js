@@ -7,7 +7,7 @@
   // ---------- global state (shared by all canvases, survives rotation) ----------
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
-  const init = () => ({ screen: 'result', rs: 'C', shelf: true, mode: 'analysis', dd: false, rec: 'products', filter: 'all',
+  const init = () => ({ screen: 'result', rs: 'C', shelf: false, mode: 'analysis', dd: false, rec: 'products', filter: 'all',
     det: 0, fm: false, done: Array(NSTEP).fill(false) });
   let S = init();
   let cur = null;
@@ -20,6 +20,7 @@
   const photoKey = () => {
     if (S.mode === 'original') return 'orig';
     if (S.mode === 'focus') return 'fwr';
+    if (S.rs === 'X') return 'orig';   // other concerns: plain photo until their analysis images arrive
     return S.rs === 'W' ? 'wr' : 'all';
   };
 
@@ -54,8 +55,9 @@
       if (o && k && o.offsetHeight) {   // concerns list never runs under the real shelf (its fade would be cut off)
         const H = rf.offsetHeight, cs = getComputedStyle(rf);
         if (!rf.dataset.cbo) { rf.dataset.cbo = parseFloat(cs.getPropertyValue('--cb-o')) || 0; rf.dataset.cbc = parseFloat(cs.getPropertyValue('--cb-c')) || 0; }
-        rf.style.setProperty('--cb-o', Math.max(+rf.dataset.cbo, H - o.offsetTop) + 'px');
-        rf.style.setProperty('--cb-c', Math.max(+rf.dataset.cbc, H - k.offsetTop) + 'px');
+        const ov = sh => sh.offsetLeft < 250;   // landscape shelf floats on the right: it never covers the list
+        rf.style.setProperty('--cb-o', (ov(o) ? Math.max(+rf.dataset.cbo, H - o.offsetTop) : +rf.dataset.cbo) + 'px');
+        rf.style.setProperty('--cb-c', (ov(k) ? Math.max(+rf.dataset.cbc, H - k.offsetTop) : +rf.dataset.cbc) + 'px');
       }
       const ag = rf.querySelector('.score-blk');   // Skin Age keeps a 20px gap above the shelf, open or collapsed
       if (ag && o && k && o.offsetHeight) { ag.style.top = (o.offsetTop - ag.offsetHeight - 20) + 'px'; ag.style.setProperty('--sc-d', (k.offsetTop - o.offsetTop) + 'px'); }
@@ -166,7 +168,23 @@
       });
       const rf = c.querySelector('.result-frame');
       if (rf) {
-        ['C', 'W'].forEach(s => rf.classList.toggle('s-' + s, S.rs === s));
+        ['C', 'W', 'X'].forEach(s => rf.classList.toggle('s-' + s, S.rs === s));
+        rf.querySelectorAll('.crow').forEach(r => r.classList.toggle('csel', S.rs === 'X' && r.dataset.cc === S.cc));
+        const lg = rf.querySelector('.legend');
+        if (lg) {
+          const pill = lg.querySelector('.lg-pill'), nm = lg.querySelector('.lg-name'), bar = lg.querySelector('.lg-bar');
+          if (!lg._w && nm) lg._w = nm.textContent;
+          const row = S.rs === 'X' ? rf.querySelector('.crow[data-cc="' + S.cc + '"]') : null;
+          const col = row ? getComputedStyle(row).getPropertyValue('--cc').trim() : '';
+          if (row && col) {
+            if (nm) nm.textContent = S.cc;
+            if (pill) pill.style.background = col;
+            if (bar) bar.style.background = 'linear-gradient(to top, color-mix(in srgb, ' + col + ' 35%, white), color-mix(in srgb, ' + col + ' 80%, black))';
+          } else if (S.rs === 'W') {
+            if (nm && lg._w) nm.textContent = lg._w;
+            if (pill) pill.style.background = ''; if (bar) bar.style.background = '';
+          }
+        }
         ['analysis', 'focus', 'original'].forEach(m => rf.classList.toggle('m-' + m, S.mode === m));
         rf.classList.toggle('shelf-open', S.shelf);
         rf.querySelectorAll('.shelf').forEach(g => g.classList.toggle('cur', g.classList.contains(S.shelf ? 'shelf-o' : 'shelf-c')));
@@ -270,10 +288,16 @@
       if (name === 'handelr') { S.shelf = !S.shelf; apply(); return true; }
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
-          if (S.rs === 'C') { S.rs = 'W'; advance(0); apply(); revealWrinkles(); }
+          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; advance(0); apply(); revealWrinkles(); }
           else { S.rs = 'C'; apply(); }
           return true;
         }
+      }
+      const rc = el.closest && el.closest('.crow');
+      if (rc) {
+        if (S.rs === 'X' && S.cc === rc.dataset.cc) { S.rs = 'C'; S.cc = null; }
+        else { S.rs = 'X'; S.cc = rc.dataset.cc; if (S.mode === 'focus') S.mode = 'analysis'; }
+        apply(); return true;
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }
       if (name === 'btn_retake') { startTake(); return true; }

@@ -63,6 +63,7 @@
       if (ag && o && k && o.offsetHeight) { ag.style.top = (o.offsetTop - ag.offsetHeight - 20) + 'px'; ag.style.setProperty('--sc-d', (k.offsetTop - o.offsetTop) + 'px'); }
     }
     c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' ? w.scrollHeight + 'px' : '0px'; });
+    c.querySelectorAll('.xsub').forEach(w => { const on = S.rs === 'X' && S.cc === w.dataset.for; w.classList.toggle('open', on); w.style.height = on ? w.scrollHeight + 'px' : '0px'; });
     syncDet(c);
   }
 
@@ -170,6 +171,7 @@
       if (rf) {
         ['C', 'W', 'X'].forEach(s => rf.classList.toggle('s-' + s, S.rs === s));
         rf.querySelectorAll('.crow').forEach(r => r.classList.toggle('csel', S.rs === 'X' && r.dataset.cc === S.cc));
+        rf.querySelectorAll('.srow').forEach(r => r.classList.toggle('ssel', !!S.sub && r.dataset.sub === S.sub && S.rs !== 'C'));
         const lg = rf.querySelector('.legend');
         if (lg) {
           const pill = lg.querySelector('.lg-pill'), nm = lg.querySelector('.lg-name'), bar = lg.querySelector('.lg-bar');
@@ -201,7 +203,7 @@
           if (dot) dot.src = sel ? 'assets/56d90.svg' : 'assets/2df40.svg';
         });
       }
-      if (cv === cur) syncLive(c); else c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W') w.style.height = '0px'; });
+      if (cv === cur) syncLive(c); else { c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W') w.style.height = '0px'; }); c.querySelectorAll('.xsub').forEach(w => { if (!(S.rs === 'X' && S.cc === w.dataset.for)) w.style.height = '0px'; }); }
     }
     motion(520);
     requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); });
@@ -290,15 +292,18 @@
       if (name === 'handelr') { S.shelf = !S.shelf; apply(); return true; }
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
-          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; advance(0); apply(); revealWrinkles(); }
-          else { S.rs = 'C'; if (S.mode === 'focus') S.mode = 'analysis'; apply(); }
+          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.sub = null; advance(0); apply(); revealWrinkles(); }
+          else { S.rs = 'C'; S.sub = null; if (S.mode === 'focus') S.mode = 'analysis'; apply(); }
           return true;
         }
       }
+      const sr = el.closest && el.closest('.srow');
+      if (sr) { S.sub = S.sub === sr.dataset.sub ? null : sr.dataset.sub; apply(); return true; }   // sub rows highlight only; the photo stays
       const rc = el.closest && el.closest('.crow');
       if (rc) {
         if (S.rs === 'X' && S.cc === rc.dataset.cc) { S.rs = 'C'; S.cc = null; S.cs = null; if (S.mode === 'focus') S.mode = 'analysis'; }
         else { S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; }
+        S.sub = null;
         apply(); return true;
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }

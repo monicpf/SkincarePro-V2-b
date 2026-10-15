@@ -347,7 +347,7 @@
     if (swallowClick) { swallowClick = false; return; }
     let n = e.target;
     const insideDd = n.closest && (n.closest('.dd') || n.closest('[data-name^="btn_skincarepro_compare_s"],[data-name^="btn_skincarepro_previewmodes"]'));
-    if (S.dd && !insideDd) { S.dd = false; apply(); return; }   // tap outside closes the dropdown
+    if (S.dd && !insideDd) { S.dd = false; apply(); }   // tap outside closes the dropdown and still acts on what was tapped
     while (n && n.id !== 'stage') {
       const name = n.getAttribute && n.getAttribute('data-name');
       if ((name || (n.classList && n.classList.contains('dd-row'))) && handle(name || '', n)) return;

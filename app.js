@@ -172,6 +172,7 @@
         ['C', 'W', 'X'].forEach(s => rf.classList.toggle('s-' + s, S.rs === s));
         rf.querySelectorAll('.crow').forEach(r => r.classList.toggle('csel', S.rs === 'X' && r.dataset.cc === S.cc));
         rf.querySelectorAll('.srow').forEach(r => r.classList.toggle('ssel', !!S.sub && r.dataset.sub === S.sub && S.rs !== 'C'));
+        rf.classList.toggle('has-subsel', !!S.sub && S.rs !== 'C');
         const lg = rf.querySelector('.legend');
         if (lg) {
           const pill = lg.querySelector('.lg-pill'), nm = lg.querySelector('.lg-name'), bar = lg.querySelector('.lg-bar');
@@ -536,6 +537,15 @@
 
   apply(true);
   layout();
+  startTake();   // the demo always opens on the photo step
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (cur) syncLive(canv[cur]); updateHint(); });
+  function preloadPhotos() {
+    const imgs = [...document.querySelectorAll('.canvas.active .ph[data-src]')].filter(im => !im.getAttribute('src'));
+    let i = 0;
+    const next = () => { if (i >= imgs.length) return; const im = imgs[i++]; im.addEventListener('load', next, { once: true }); im.addEventListener('error', next, { once: true }); im.src = im.dataset.src; };
+    for (let k = 0; k < 4; k++) next();
+  }
+  window.addEventListener('load', () => setTimeout(preloadPhotos, 300));
+  window.addEventListener('resize', () => setTimeout(preloadPhotos, 600));
   window.__proto = { get state() { return S; }, go, startTake, setDet };
 })();

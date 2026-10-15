@@ -19,8 +19,8 @@
   };
   const photoKey = () => {
     if (S.mode === 'original') return 'orig';
+    if (S.rs === 'X' && S.cs) return (S.mode === 'focus' ? 'f-' : 'a-') + S.cs;
     if (S.mode === 'focus') return 'fwr';
-    if (S.rs === 'X') return 'orig';   // other concerns: plain photo until their analysis images arrive
     return S.rs === 'W' ? 'wr' : 'all';
   };
 
@@ -151,7 +151,7 @@
   function apply(resetScroll) {
     setTimeout(() => fadeAll(), 560);
     const key = screenKey();
-    if (S.mode === 'focus' && S.rs !== 'W') S.mode = 'analysis';
+    if (S.mode === 'focus' && S.rs === 'C') S.mode = 'analysis';
     for (const cv in canv) {
       const c = canv[cv];
       c.classList.toggle('f-red', S.filter !== 'all');
@@ -190,8 +190,10 @@
         rf.querySelectorAll('.shelf').forEach(g => g.classList.toggle('cur', g.classList.contains(S.shelf ? 'shelf-o' : 'shelf-c')));
         rf.classList.toggle('dd-open', S.dd);
         const pk = photoKey();
-        rf.querySelectorAll('.ph').forEach(im => im.classList.toggle('on', im.classList.contains('ph-' + pk)));
-        rf.classList.toggle('no-focus', S.rs !== 'W');
+        const pim = rf.querySelector('.ph-' + pk);
+        if (pim && !pim.getAttribute('src') && pim.dataset.src) pim.src = pim.dataset.src;   // concern photos load on demand
+        rf.querySelectorAll('.ph').forEach(im => im.classList.toggle('on', im === pim));
+        rf.classList.toggle('no-focus', S.rs === 'C');
         rf.querySelectorAll('.dd-row').forEach(row => {
           const sel = row.dataset.mode === S.mode;
           row.classList.toggle('sel', sel);
@@ -281,7 +283,7 @@
     if (isHome(name)) { if (S.screen === 'share') startTake(); return true; }   // Home only works on Download Report (restarts the camera); elsewhere it would open the landing page, not part of this demo
     if (S.screen === 'result') {
       if (el.classList && el.classList.contains('dd-row')) {
-        if (el.dataset.mode === 'focus' && S.rs !== 'W') return true;   // focus needs a selected concern
+        if (el.dataset.mode === 'focus' && S.rs === 'C') return true;   // focus needs a selected concern
         S.mode = el.dataset.mode; advance(1); if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true;   // dropdown stays open
       }
       if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
@@ -289,14 +291,14 @@
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
           if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; advance(0); apply(); revealWrinkles(); }
-          else { S.rs = 'C'; apply(); }
+          else { S.rs = 'C'; if (S.mode === 'focus') S.mode = 'analysis'; apply(); }
           return true;
         }
       }
       const rc = el.closest && el.closest('.crow');
       if (rc) {
-        if (S.rs === 'X' && S.cc === rc.dataset.cc) { S.rs = 'C'; S.cc = null; }
-        else { S.rs = 'X'; S.cc = rc.dataset.cc; if (S.mode === 'focus') S.mode = 'analysis'; }
+        if (S.rs === 'X' && S.cc === rc.dataset.cc) { S.rs = 'C'; S.cc = null; S.cs = null; if (S.mode === 'focus') S.mode = 'analysis'; }
+        else { S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; }
         apply(); return true;
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }

@@ -356,12 +356,15 @@
       }
       if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
       if (name === 'handelr') { S.shelf = !S.shelf; if (S.shelf) advance(0); apply(); return true; }
-      if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
-        if (el.closest('.wr-row')) {
-          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; apply(); revealWrinkles(); }
-          else if (S.sub) { S.sub = null; apply(); }   // 1016: re-tapping the selected concern never unselects it
-          return true;
-        }
+      // 1016 concern rules: one filled circle; re-tapping a selected circle does nothing; the − badge folds the group back
+      const clearSel = () => { S.rs = 'C'; S.cc = null; S.cs = null; S.sub = null; if (S.mode === 'focus') S.mode = 'analysis'; apply(); };
+      const isMinus = name === 'badge_minus' || (el.classList && el.classList.contains('st-minus'));
+      if (isMinus) { clearSel(); return true; }
+      if (name === 'row_Skin Score') { if (S.rs !== 'C') clearSel(); return true; }   // Skin Score = overall view
+      if (name === 'row_Wrinkles' || (name === 'badge_plus' && el.closest('.wr-row'))) {
+        if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; apply(); revealWrinkles(); }
+        else if (S.sub) { S.sub = null; apply(); }
+        return true;
       }
       const sr = el.closest && el.closest('.srow');
       if (sr) { if (S.sub !== sr.dataset.sub) { S.sub = sr.dataset.sub; apply(); } return true; }   // sub rows: re-tap keeps the selection; the photo stays
@@ -385,7 +388,7 @@
     if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: 'Redness' }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
-    if (name === 'tab_Get Report') { advance(5); if (S.screen !== 'share') go('share'); return true; }
+    if (name === 'tab_Get Report') { advance(4); advance(5); if (S.screen !== 'share') go('share'); return true; }
     if (S.screen === 'detail') {
       const m = /^dtab_(\d)$/.exec(name);
       if (m) { setDet(+m[1]); return true; }
@@ -437,8 +440,24 @@
   }, true);
 
   let swallowClick = false, tapUntil = 0;
-  function dispatchTap(target) {
-    let n = target;
+  // 1016: a tap near a visible +/− badge counts as that badge (the badges are tiny on the scaled canvas)
+  function nearBadge(target, x, y) {
+    const col = target.closest && target.closest('.result-frame .ccol');
+    if (!col || x == null) return target;
+    const s = (canv[cur] && canv[cur]._s) || 1, R = (cur === 'm' ? 20 : 34) * s;
+    let best = null, bd = 1e9;
+    col.querySelectorAll('[data-name^="badge_"], .st-plus, .st-minus').forEach(bg => {
+      if (getComputedStyle(bg).display === 'none') return;
+      if (bg.closest(S.rs === 'W' ? '.wr-x' : '.wr-w')) return;   // the folded / unfolded Wrinkles rows sit on top of each other
+      if (bg.checkVisibility && !bg.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return;
+      const r = bg.getBoundingClientRect(); if (r.width < 1) return;
+      const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) - r.width / 2;
+      if (d < R && d < bd) { bd = d; best = bg; }
+    });
+    return best || target;
+  }
+  function dispatchTap(target, x, y) {
+    let n = nearBadge(target, x, y);
     const insideDd = n.closest && (n.closest('.dd') || n.closest('[data-name^="btn_skincarepro_compare_s"],[data-name^="btn_skincarepro_previewmodes"]'));
     if (S.dd && !insideDd) { S.dd = false; apply(); }   // tap outside closes the dropdown and still acts on what was tapped
     while (n && n.id !== 'stage') {
@@ -450,7 +469,7 @@
   document.getElementById('stage').addEventListener('click', e => {
     if (swallowClick) { swallowClick = false; return; }
     if (Date.now() < tapUntil) return;   // already handled on touchend
-    dispatchTap(e.target);
+    dispatchTap(e.target, e.clientX, e.clientY);
   });
   // 1016: concern column taps fire on touchend (a tiny finger drift inside the scroll list used to cancel the click)
   let tp = null;
@@ -463,8 +482,8 @@
   document.addEventListener('touchmove', e => { if (!tp) return; const t = e.touches[0]; tp.m = Math.max(tp.m || 0, Math.hypot(t.clientX - tp.x, t.clientY - tp.y)); }, { passive: true });
   document.addEventListener('touchend', () => {
     const d = tp; tp = null;
-    if (!d || (d.m || 0) > 14 || Date.now() - d.t > 700 || (d.l && Math.abs(d.l.scrollTop - d.st) > 10)) return;
-    tapUntil = Date.now() + 600; dispatchTap(d.el);
+    if (!d || (d.m || 0) > 14 || Date.now() - d.t > 700) return;
+    tapUntil = Date.now() + 600; dispatchTap(d.el, d.x, d.y);
   }, { passive: true });
   document.addEventListener('touchcancel', () => { tp = null; }, { passive: true });
 
@@ -561,7 +580,7 @@
       case 1: if (modeAt && Date.now() - modeAt >= 2000) return null; return S.dd ? firstVis(sc, '.dd-row:not(.sel):not([data-mode="focus"]), .result-frame.s-W .dd-row[data-mode="focus"]:not(.sel)') : firstVis(sc, '[data-name^="btn_skincarepro_compare_s"], [data-name^="btn_skincarepro_previewmodes"]');
       case 2: return (modeAt && Date.now() - modeAt >= 2000) ? firstVis(sc, '[data-name="btn_view_report"]') : null;
       case 3: return firstVis(sc, '[data-name="concern_card_Redness"]');
-      case 4: return firstVis(sc, '.dp-on [data-name="btn_matching_products"]');
+      case 4: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');   // 1016: concern detail points at Get Report in the navigator
       case 5: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');
       case 6: return firstVis(sc, ':is([data-name^="btn_skincarepro_home"],[data-name^="btn_y4b_skincarecm_home"])');
     }
@@ -620,6 +639,8 @@
     const s = c._s || 1, cr = c.getBoundingClientRect(), r = t.getBoundingClientRect();
     const x = (r.left - cr.left + r.width / 2) / s, y = (r.top - cr.top + r.height / 2) / s;
     if (y < 0 || y > DIM[cur][1]) { layer.classList.remove('hint-on'); return; }
+    { const top = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2).find(e => !e.closest('.hint-layer'));   // hidden under a sticky bar / tab bar: no hint
+      if (top && !t.contains(top) && !top.contains(t)) { layer.classList.remove('hint-on'); return; } }
     const sc = t.closest('.screen'), fl = sc && sc.querySelector(':scope > .fixedlayer');
     const home = (fl && !t.closest('.fixedlayer')) ? sc : c;     // inside the page: below the fixed bars
     if (layer.parentElement !== home) { if (home === sc) sc.insertBefore(layer, fl); else c.appendChild(layer); }

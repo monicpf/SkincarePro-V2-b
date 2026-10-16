@@ -7,7 +7,7 @@
   // ---------- global state (shared by all canvases, survives rotation) ----------
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
-  const init = () => ({ screen: 'result', rs: 'C', shelf: false, rt: 'products', mode: 'analysis', dd: false, rec: 'products', filter: 'all',
+  const init = () => ({ screen: 'result', rs: 'C', shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
     det: 0, fm: false, done: Array(NSTEP).fill(false) });
   let S = init();
   let cur = null;
@@ -261,6 +261,7 @@
     document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.scrollTop = +(sr.dataset.keep || 0); });
   }
   function go(screen, opts = {}) {
+    if (screen !== S.screen && S.screen !== 'take') S.hist.push(S.screen);   // back returns to whichever page this one was opened from
     if (S.screen === 'report') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; });
     S.screen = screen;
     if (opts.rec) S.rec = opts.rec;
@@ -311,11 +312,11 @@
     if (name === 'btn_take_back') { stopTake(); S.screen = 'result'; apply(true); return true; }
     if (S.screen === 'take') return true;
     if (S.screen === 'result' && (isBack(name) || isHome(name))) return true;   // disabled on the result page
-    if (isBack(name)) {
-      // Report goes back to the analysis result
-      if (S.screen === 'detail' || S.screen === 'rec') backToReport();   // concern detail / recommendation go back to the report
-      else if (S.screen === 'report') { S.screen = 'result'; S.dd = false; apply(true); }
-      else startTake();   // Download Report: start over with a new photo
+    if (isBack(name)) {   // report / concern detail / recommendations / get report: back to the page it was opened from
+      const prev = S.hist.pop() || (S.screen === 'share' ? null : 'result');
+      if (!prev) startTake();
+      else if (prev === 'report') backToReport();   // keeps the report's scroll position
+      else { if (S.screen === 'report') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; }); S.screen = prev; S.dd = false; apply(prev === 'result'); }
       return true;
     }
     if (isHome(name)) { if (S.screen === 'share') startTake(); return true; }   // Home only works on Download Report (restarts the camera); elsewhere it would open the landing page, not part of this demo

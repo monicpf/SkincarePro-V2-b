@@ -432,12 +432,19 @@
     S.det = i; syncDet(canv[cur]);
     const g = detGeo(canv[cur]); if (!g) return;
     setTimeout(() => { detLock = true; }, 0);
+    // 1016: the last section can't reach the pinned tabs on its own — add a temporary tail so it can
+    let tail = g.sr.querySelector('.det-tail');
+    if (!tail) { tail = document.createElement('div'); tail.className = 'det-tail'; tail.style.cssText = 'height:0;flex-shrink:0;pointer-events:none'; const last = [...g.sr.querySelectorAll('.det-panel')].pop(); (last && last.parentElement ? last.parentElement : g.sr).appendChild(tail); }
+    const need = (g.secs[i] - g.off) - (g.sr.scrollHeight - g.sr.clientHeight);
+    if (need > 0) tail.style.height = (parseFloat(tail.style.height) || 0) + need + 'px';
     g.sr.scrollTo({ top: Math.max(0, Math.min(g.secs[i] - g.off, g.sr.scrollHeight - g.sr.clientHeight)), behavior: 'smooth' });
   }
   document.addEventListener('scroll', e => {   // underline follows the section under the pinned tabs
     if (S.screen !== 'detail' || !cur || detLock) return;
     const t = e.target; if (!t.classList || !t.classList.contains('scroller') || !t.closest('.screen[data-screen="detail"]')) return;
     const g = detGeo(canv[cur]); if (!g) return;
+    { const tl = g.sr.querySelector('.det-tail'), th = tl ? parseFloat(tl.style.height) || 0 : 0;   // drop the tail once it is out of view
+      if (th && g.sr.scrollTop + g.sr.clientHeight < g.sr.scrollHeight - th - 2) tl.style.height = '0px'; }
     let i = 0;
     g.secs.forEach((y, k) => { if (g.sr.scrollTop + g.off + 2 >= y) i = k; });
     if (g.sr.scrollTop + g.sr.clientHeight >= g.sr.scrollHeight - 2) i = 2;

@@ -355,10 +355,10 @@
         S.mode = el.dataset.mode; advance(1); if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true;   // dropdown stays open
       }
       if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
-      if (name === 'handelr') { S.shelf = !S.shelf; apply(); return true; }
+      if (name === 'handelr') { S.shelf = !S.shelf; if (S.shelf) advance(0); apply(); return true; }
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
-          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; advance(0); apply(); revealWrinkles(); }
+          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; apply(); revealWrinkles(); }
           else if (S.sub) { S.sub = null; apply(); }   // 1016: re-tapping the selected concern never unselects it
           return true;
         }
@@ -436,10 +436,9 @@
     if (i !== S.det) { S.det = i; syncDet(canv[cur]); }
   }, true);
 
-  let swallowClick = false;
-  document.getElementById('stage').addEventListener('click', e => {
-    if (swallowClick) { swallowClick = false; return; }
-    let n = e.target;
+  let swallowClick = false, tapUntil = 0;
+  function dispatchTap(target) {
+    let n = target;
     const insideDd = n.closest && (n.closest('.dd') || n.closest('[data-name^="btn_skincarepro_compare_s"],[data-name^="btn_skincarepro_previewmodes"]'));
     if (S.dd && !insideDd) { S.dd = false; apply(); }   // tap outside closes the dropdown and still acts on what was tapped
     while (n && n.id !== 'stage') {
@@ -447,7 +446,27 @@
       if ((name || (n.classList && n.classList.contains('dd-row'))) && handle(name || '', n)) return;
       n = n.parentElement;
     }
+  }
+  document.getElementById('stage').addEventListener('click', e => {
+    if (swallowClick) { swallowClick = false; return; }
+    if (Date.now() < tapUntil) return;   // already handled on touchend
+    dispatchTap(e.target);
   });
+  // 1016: concern column taps fire on touchend (a tiny finger drift inside the scroll list used to cancel the click)
+  let tp = null;
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0], col = e.target.closest && e.target.closest('.result-frame .ccol');
+    if (!col || e.touches.length > 1) { tp = null; return; }
+    const l = col.querySelector('.clist');
+    tp = { x: t.clientX, y: t.clientY, el: e.target, l, st: l ? l.scrollTop : 0, t: Date.now() };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => { if (!tp) return; const t = e.touches[0]; tp.m = Math.max(tp.m || 0, Math.hypot(t.clientX - tp.x, t.clientY - tp.y)); }, { passive: true });
+  document.addEventListener('touchend', () => {
+    const d = tp; tp = null;
+    if (!d || (d.m || 0) > 14 || Date.now() - d.t > 700 || (d.l && Math.abs(d.l.scrollTop - d.st) > 10)) return;
+    tapUntil = Date.now() + 600; dispatchTap(d.el);
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => { tp = null; }, { passive: true });
 
   // product shelf: tap the handle area or drag it down / up to collapse / open
   let sd = null;
@@ -474,7 +493,7 @@
     swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
     const dy = ((e ? e.clientY : d.y) - d.y) / (canv[cur]._s || 1);
     if (S.shelf && dy > 40) { S.shelf = false; apply(); }
-    else if (!S.shelf && dy < -40) { S.shelf = true; apply(); }
+    else if (!S.shelf && dy < -40) { S.shelf = true; advance(0); apply(); }
   };
   document.addEventListener('dragstart', e => { if (e.target.closest && e.target.closest('.shelf')) e.preventDefault(); });   // native image drag would cancel the pointer drag
   // recommended card rows: mouse drag scrolls sideways (touch scrolls natively)
@@ -538,7 +557,7 @@
   const STEP_SCREEN = [/^result$/, /^result$/, /^result$/, /^report$/, /^detail$/, /^(recAll|recRed|routines|treatments)$/, /^share$/];
   function stepTarget(i, sc) {
     switch (i) {
-      case 0: return S.rs === 'C' ? firstVis(sc, '.wr-x > :first-child') : null;
+      case 0: return S.shelf ? null : firstVis(sc, '.shelf.cur [data-name="handelr"]');   // 1016: See All Recommendations first, then preview modes
       case 1: if (modeAt && Date.now() - modeAt >= 2000) return null; return S.dd ? firstVis(sc, '.dd-row:not(.sel):not([data-mode="focus"]), .result-frame.s-W .dd-row[data-mode="focus"]:not(.sel)') : firstVis(sc, '[data-name^="btn_skincarepro_compare_s"], [data-name^="btn_skincarepro_previewmodes"]');
       case 2: return (modeAt && Date.now() - modeAt >= 2000) ? firstVis(sc, '[data-name="btn_view_report"]') : null;
       case 3: return firstVis(sc, '[data-name="concern_card_Redness"]');

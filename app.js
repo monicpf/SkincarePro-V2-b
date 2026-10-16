@@ -19,7 +19,7 @@
   };
   const photoKey = () => {
     if (S.mode === 'original') return 'orig';
-    if (S.rs === 'X' && S.cs) return (S.mode === 'focus' ? 'f-' : 'a-') + S.cs;
+    if (S.rs === 'X' && S.cs) return (S.mode === 'focus' ? 'f-' : 'a-') + S.cs + (S.cc === 'Skin Type' && S.sub && S.sub !== 'Full Face' ? (S.sub === 'T-Zone' ? '_t' : '_u') : '');
     if (S.mode === 'focus') return 'fwr';
     return S.rs === 'W' ? 'wr' : 'all';
   };
@@ -233,6 +233,7 @@
         rf.querySelectorAll('.crow').forEach(r => r.classList.toggle('csel', S.rs === 'X' && r.dataset.cc === S.cc));
         rf.querySelectorAll('.srow').forEach(r => r.classList.toggle('ssel', !!S.sub && r.dataset.sub === S.sub && S.rs !== 'C'));
         rf.classList.toggle('has-subsel', !!S.sub && S.rs !== 'C');
+        rf.classList.toggle('st-on', S.rs === 'X' && S.cc === 'Skin Type');
         const lg = rf.querySelector('.legend');
         if (lg) {
           const pill = lg.querySelector('.lg-pill'), nm = lg.querySelector('.lg-name'), bar = lg.querySelector('.lg-bar');
@@ -272,6 +273,7 @@
     requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); });
     setTimeout(() => { if (cur) syncDet(canv[cur]); updateHint(); }, 540);
   }
+  function revealSkinType() { setTimeout(() => { const l = canv[cur] && canv[cur].querySelector('.clist'); if (l) smoothTo(l, 0); }, 60); }
   // after the wrinkle rows unfold, keep them in view
   function revealWrinkles() {
     setTimeout(() => {
@@ -356,18 +358,21 @@
       if (name === 'handelr') { S.shelf = !S.shelf; apply(); return true; }
       if (name === 'row_Wrinkles' || name === 'badge_plus' || name === 'badge_minus') {
         if (el.closest('.wr-row')) {
-          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.sub = null; advance(0); apply(); revealWrinkles(); }
-          else { S.rs = 'C'; S.sub = null; if (S.mode === 'focus') S.mode = 'analysis'; apply(); }
+          if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; advance(0); apply(); revealWrinkles(); }
+          else if (S.sub) { S.sub = null; apply(); }   // 1016: re-tapping the selected concern never unselects it
           return true;
         }
       }
       const sr = el.closest && el.closest('.srow');
-      if (sr) { S.sub = S.sub === sr.dataset.sub ? null : sr.dataset.sub; apply(); return true; }   // sub rows highlight only; the photo stays
+      if (sr) { if (S.sub !== sr.dataset.sub) { S.sub = sr.dataset.sub; apply(); } return true; }   // sub rows: re-tap keeps the selection; Skin Type zones also swap the photo
+      if (el.closest && el.closest('.st-type')) {
+        if (!(S.rs === 'X' && S.cc === 'Skin Type')) { S.rs = 'X'; S.cc = 'Skin Type'; S.cs = 'skintype'; S.sub = 'Full Face'; apply(); revealSkinType(); }
+        return true;
+      }
       const rc = el.closest && el.closest('.crow');
       if (rc) {
-        if (S.rs === 'X' && S.cc === rc.dataset.cc) { S.rs = 'C'; S.cc = null; S.cs = null; if (S.mode === 'focus') S.mode = 'analysis'; }
-        else { S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; }
-        S.sub = null;
+        if (S.rs === 'X' && S.cc === rc.dataset.cc) { if (S.sub) { S.sub = null; apply(); } return true; }   // re-tap keeps it selected
+        S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; S.sub = null;
         apply(); return true;
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }

@@ -79,6 +79,37 @@
     };
   }
 
+  // 1016: Result insight card follows the picked concern (one-line summary from the full skin report, <=150 chars)
+  const INSIGHT = {
+      "Radiance": "Obvious surface dullness across the cheeks and forehead is primarily influenced by surface dehydration and uneven light reflection.",
+      "Moisture": "Obvious moisture loss is concentrated across the forehead and cheek areas, presenting primarily as skin dehydration rather than oil deficiency.",
+      "Spots": "Moderate scattered freckles and pigmented spots are visible across the cheeks, nose bridge, and forehead area.",
+      "Oiliness": "Moderate shine is primarily observed across the T-zone and central forehead, with mild surface glisten on the upper cheeks.",
+      "Redness": "Moderate facial redness appears in a central distribution across both cheeks, the nose bridge, chin, and forehead.",
+      "Wrinkles": "Moderate facial creasing is concentrated around the eyes and smile folds, where repeated expression and photoaging interact.",
+      "Pores": "Moderate pore visibility is identified across the cheeks and central T-zone, influenced by local surface oil dynamics and surrounding dermal firmness.",
+      "Eye Bag": "Moderate, symmetric under-eye fullness is visible below both eyes, showing a blend of fluid retention and structural contour features.",
+      "Acne": "Moderate acne presentation characterized by scattered inflammatory papules and small comedones mainly across both cheeks and chin.",
+      "Dark Circle": "Mild under-eye shadowing is present beneath both eyes, presenting a mixed pattern of subtle structural contouring and delicate vascular undertones.",
+      "Firmness": "The lower face and jawline display a moderate reduction in firmness, with softer structural definition across the lower cheek contours.",
+      "Texture": "Mild texture unevenness presents as fine surface granularity on the forehead along with subtle pore visibility across the T-zone.",
+      "Droopy Lower Eyelid": "Mild lower eyelid laxity and expression lines are present, with normal eyelid positioning against the eye.",
+      "Droopy Upper Eyelid": "Mild upper eyelid hooding is present symmetrically across both eyes without obstructing pupil exposure or the visual field.",
+      "Tear Trough": "Mild structural tear trough grooves appear symmetrically under both eyes, where anatomical contours create subtle surface shadowing.",
+      "Skin Type": "Combination skin profile featuring pronounced T-zone oiliness alongside dry, flushed cheeks requiring zone-specific care."
+  };
+  function syncInsight(rf) {
+    const k = S.rs === 'X' ? S.cc : (S.rs === 'W' ? 'Wrinkles' : null);
+    rf.querySelectorAll('.shelf .ins-t').forEach(t => {
+      const b = t.parentElement.querySelector('.ins-b'); if (!b) return;
+      if (!t.dataset.o) { t.dataset.o = t.textContent; b.dataset.o = b.textContent; }
+      const nt = k && INSIGHT[k] ? k : t.dataset.o, nb = k && INSIGHT[k] ? INSIGHT[k] : b.dataset.o;
+      if (t.textContent === nt && b.textContent === nb) return;
+      t.textContent = nt; b.textContent = nb;
+      [t, b].forEach(e => e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }));
+    });
+  }
+
   // measurements that only work on the visible canvas
   function syncLive(c) {
     const rf = c.querySelector('.result-frame');
@@ -219,6 +250,7 @@
         }
         ['analysis', 'focus', 'original'].forEach(m => rf.classList.toggle('m-' + m, S.mode === m));
         rf.classList.toggle('shelf-open', S.shelf);
+        syncInsight(rf);
         ['products', 'routines', 'treatments'].forEach(t => rf.classList.toggle('rt-' + t, S.rt === t));
         rf.querySelectorAll('.shelf').forEach(g => g.classList.toggle('cur', g.classList.contains(S.shelf ? 'shelf-o' : 'shelf-c')));
         rf.classList.toggle('dd-open', S.dd);

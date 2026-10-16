@@ -46,9 +46,43 @@
     updateHint();
   }
 
+  // recommended tabs: the black pill slides to the picked tab, the card row fades/slides across, the shelf height eases
+  const RT = ['products', 'routines', 'treatments'];
+  function syncPill(rf, t) {
+    rf.querySelectorAll('.shelf [data-name="tabs"]').forEach(tb => {
+      const tab = tb.querySelector('[data-name="tab_' + t[0].toUpperCase() + t.slice(1) + '"]'), pill = tb.querySelector('.rt-pill');
+      if (!tab || !pill || !tab.offsetWidth) return;
+      pill.style.width = tab.offsetWidth + 'px'; pill.style.transform = 'translateX(' + tab.offsetLeft + 'px)';
+    });
+    if (!rf.classList.contains('pill-ready')) requestAnimationFrame(() => rf.classList.add('pill-ready'));
+  }
+  let rtBusy = false;
+  function switchRec(t) {
+    if (S.rt === t || rtBusy) return;
+    const rf = canv[cur] && canv[cur].querySelector('.result-frame');
+    const sh = rf && rf.querySelector('.shelf-o.cur');
+    if (!sh || matchMedia('(prefers-reduced-motion: reduce)').matches) { S.rt = t; apply(); return; }
+    rtBusy = true;
+    const dir = Math.sign(RT.indexOf(t) - RT.indexOf(S.rt)) || 1, ease = 'cubic-bezier(.22,.8,.24,1)';
+    syncPill(rf, t);
+    const out = sh.querySelector('.rv-' + S.rt);
+    const a = out.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (-dir * 32) + 'px)' }], { duration: 150, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    a.onfinish = () => {
+      const h0 = sh.offsetHeight;
+      rf.classList.add('rt-anim');
+      S.rt = t; apply(); a.cancel();
+      const inn = sh.querySelector('.rv-' + t); inn.scrollLeft = 0;
+      const h1 = sh.offsetHeight;
+      if (Math.abs(h1 - h0) > 1) sh.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 420, easing: ease });
+      inn.animate([{ opacity: 0, transform: 'translateX(' + (dir * 48) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: ease });
+      setTimeout(() => { rf.classList.remove('rt-anim'); rtBusy = false; }, 440);
+    };
+  }
+
   // measurements that only work on the visible canvas
   function syncLive(c) {
     const rf = c.querySelector('.result-frame');
+    if (rf) syncPill(rf, S.rt);
     if (rf) {   // height difference between the open and collapsed product shelf drives the slide
       const o = rf.querySelector('.shelf-o'), k = rf.querySelector('.shelf-c');
       if (o && k && o.offsetHeight) rf.style.setProperty('--shelf-d', (o.offsetHeight - k.offsetHeight) + 'px');
@@ -311,11 +345,7 @@
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }
       if (name === 'btn_retake') { startTake(); return true; }
       const rtm = /^tab_(Products|Routines|Treatments)/.exec(name);
-      if (rtm) {   // recommended tabs swap only the card row; concerns / photo / insight keep their state
-        const t = rtm[1].toLowerCase();
-        if (S.rt !== t) { S.rt = t; apply(); document.querySelectorAll('.result-frame .rv-' + t).forEach(r => { r.scrollLeft = 0; }); }
-        return true;
-      }
+      if (rtm) { switchRec(rtm[1].toLowerCase()); return true; }   // swaps only the card row; concerns / photo / insight keep their state
       return false;
     }
     if (name === 'concern_card_Redness') { advance(3); go('detail'); return true; }

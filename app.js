@@ -7,7 +7,7 @@
   // ---------- global state (shared by all canvases, survives rotation) ----------
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
-  const init = () => ({ screen: 'result', rs: 'C', shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
+  const init = () => ({ screen: 'result', rs: 'C', fold: false, shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
     det: 0, fm: false, done: Array(NSTEP).fill(false) });
   let S = init();
   let cur = null;
@@ -127,8 +127,8 @@
       const ag = rf.querySelector('.score-blk');   // Skin Age keeps a 20px gap above the shelf, open or collapsed
       if (ag && o && k && o.offsetHeight) { ag.style.top = (o.offsetTop - ag.offsetHeight - 20) + 'px'; ag.style.setProperty('--sc-d', (k.offsetTop - o.offsetTop) + 'px'); }
     }
-    c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' ? w.scrollHeight + 'px' : '0px'; });
-    c.querySelectorAll('.xsub').forEach(w => { const on = S.rs === 'X' && S.cc === w.dataset.for; w.classList.toggle('open', on); w.style.height = on ? w.scrollHeight + 'px' : '0px'; });
+    c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' && !S.fold ? w.scrollHeight + 'px' : '0px'; });
+    c.querySelectorAll('.xsub').forEach(w => { const on = S.rs === 'X' && S.cc === w.dataset.for && !S.fold; w.classList.toggle('open', on); w.style.height = on ? w.scrollHeight + 'px' : '0px'; });
     syncDet(c);
   }
 
@@ -234,6 +234,7 @@
         rf.querySelectorAll('.srow').forEach(r => r.classList.toggle('ssel', !!S.sub && r.dataset.sub === S.sub && S.rs !== 'C'));
         rf.classList.toggle('has-subsel', !!S.sub && S.rs !== 'C');
         rf.classList.toggle('st-on', S.rs === 'X' && S.cc === 'Skin Type');
+        rf.classList.toggle('fold', !!S.fold);
         const lg = rf.querySelector('.legend');
         if (lg) {
           const pill = lg.querySelector('.lg-pill'), nm = lg.querySelector('.lg-name'), bar = lg.querySelector('.lg-bar');
@@ -267,7 +268,7 @@
           if (dot) dot.src = sel ? 'assets/56d90.svg' : 'assets/2df40.svg';
         });
       }
-      if (cv === cur) syncLive(c); else { c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W') w.style.height = '0px'; }); c.querySelectorAll('.xsub').forEach(w => { if (!(S.rs === 'X' && S.cc === w.dataset.for)) w.style.height = '0px'; }); }
+      if (cv === cur) syncLive(c); else { c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W' || S.fold) w.style.height = '0px'; }); c.querySelectorAll('.xsub').forEach(w => { if (!(S.rs === 'X' && S.cc === w.dataset.for) || S.fold) w.style.height = '0px'; }); }
     }
     motion(520);
     requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); });
@@ -357,25 +358,29 @@
       if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
       if (name === 'handelr') { S.shelf = !S.shelf; if (S.shelf) advance(0); apply(); return true; }
       // 1016 concern rules: one filled circle; re-tapping a selected circle does nothing; the − badge folds the group back
-      const clearSel = () => { S.rs = 'C'; S.cc = null; S.cs = null; S.sub = null; if (S.mode === 'focus') S.mode = 'analysis'; apply(); };
+      const clearSel = () => { S.rs = 'C'; S.cc = null; S.cs = null; S.sub = null; S.fold = false; if (S.mode === 'focus') S.mode = 'analysis'; apply(); };
       const isMinus = name === 'badge_minus' || (el.classList && el.classList.contains('st-minus'));
-      if (isMinus) { clearSel(); return true; }
+      const isPlus = name === 'badge_plus' || (el.classList && el.classList.contains('st-plus'));
+      if (isMinus) { S.fold = true; if (S.cc !== 'Skin Type') S.sub = null; apply(); return true; }   // − folds the rows; the concern stays selected
+      if (isPlus && S.fold && (el.closest('.wr-row') ? S.rs === 'W' : (el.closest('.st-type') ? S.cc === 'Skin Type' : (el.closest('.crow') && S.rs === 'X' && S.cc === el.closest('.crow').dataset.cc)))) {
+        S.fold = false; apply(); if (S.rs === 'W') revealWrinkles(); return true;
+      }
       if (name === 'row_Skin Score') { if (S.rs !== 'C') clearSel(); return true; }   // Skin Score = overall view
       if (name === 'row_Wrinkles' || (name === 'badge_plus' && el.closest('.wr-row'))) {
-        if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; apply(); revealWrinkles(); }
+        if (S.rs !== 'W') { S.rs = 'W'; S.cc = null; S.cs = null; S.sub = null; S.fold = false; apply(); revealWrinkles(); }
         else if (S.sub) { S.sub = null; apply(); }
         return true;
       }
       const sr = el.closest && el.closest('.srow');
       if (sr) { if (S.sub !== sr.dataset.sub) { S.sub = sr.dataset.sub; apply(); } return true; }   // sub rows: re-tap keeps the selection; the photo stays
       if (el.closest && el.closest('.st-type')) {
-        if (!(S.rs === 'X' && S.cc === 'Skin Type')) { S.rs = 'X'; S.cc = 'Skin Type'; S.cs = 'skintype'; S.sub = 'Full Face'; apply(); revealSkinType(); }
+        if (!(S.rs === 'X' && S.cc === 'Skin Type')) { S.rs = 'X'; S.cc = 'Skin Type'; S.cs = 'skintype'; S.sub = 'Full Face'; S.fold = false; apply(); revealSkinType(); }
         return true;
       }
       const rc = el.closest && el.closest('.crow');
       if (rc) {
         if (S.rs === 'X' && S.cc === rc.dataset.cc) { if (S.sub) { S.sub = null; apply(); } return true; }   // re-tap keeps it selected
-        S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; S.sub = null;
+        S.rs = 'X'; S.cc = rc.dataset.cc; S.cs = rc.dataset.slug || null; S.sub = null; S.fold = false;
         apply(); return true;
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }

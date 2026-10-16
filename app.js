@@ -7,7 +7,7 @@
   // ---------- global state (shared by all canvases, survives rotation) ----------
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
-  const init = () => ({ screen: 'result', rs: 'C', shelf: false, mode: 'analysis', dd: false, rec: 'products', filter: 'all',
+  const init = () => ({ screen: 'result', rs: 'C', shelf: false, rt: 'products', mode: 'analysis', dd: false, rec: 'products', filter: 'all',
     det: 0, fm: false, done: Array(NSTEP).fill(false) });
   let S = init();
   let cur = null;
@@ -190,6 +190,7 @@
         }
         ['analysis', 'focus', 'original'].forEach(m => rf.classList.toggle('m-' + m, S.mode === m));
         rf.classList.toggle('shelf-open', S.shelf);
+        ['products', 'routines', 'treatments'].forEach(t => rf.classList.toggle('rt-' + t, S.rt === t));
         rf.querySelectorAll('.shelf').forEach(g => g.classList.toggle('cur', g.classList.contains(S.shelf ? 'shelf-o' : 'shelf-c')));
         rf.classList.toggle('dd-open', S.dd);
         const pk = photoKey();
@@ -309,7 +310,12 @@
       }
       if (name === 'btn_view_report') { advance(2); go('report'); return true; }
       if (name === 'btn_retake') { startTake(); return true; }
-      if (/^tab_(Products|Routines|Treatments)/.test(name)) return true;
+      const rtm = /^tab_(Products|Routines|Treatments)/.exec(name);
+      if (rtm) {   // recommended tabs swap only the card row; concerns / photo / insight keep their state
+        const t = rtm[1].toLowerCase();
+        if (S.rt !== t) { S.rt = t; apply(); document.querySelectorAll('.result-frame .rv-' + t).forEach(r => { r.scrollLeft = 0; }); }
+        return true;
+      }
       return false;
     }
     if (name === 'concern_card_Redness') { advance(3); go('detail'); return true; }
@@ -383,6 +389,20 @@
     else if (!S.shelf && dy < -40) { S.shelf = true; apply(); }
   };
   document.addEventListener('dragstart', e => { if (e.target.closest && e.target.closest('.shelf')) e.preventDefault(); });   // native image drag would cancel the pointer drag
+  // recommended card rows: mouse drag scrolls sideways (touch scrolls natively)
+  let rd = null;
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || S.screen !== 'result') return;
+    const r = e.target.closest && e.target.closest('.result-frame .shelf.cur .rv');
+    if (r) rd = { r, x: e.clientX, l: r.scrollLeft, on: false };
+  });
+  document.addEventListener('pointermove', e => {
+    if (!rd) return;
+    const dx = (e.clientX - rd.x) / (canv[cur]._s || 1);
+    if (!rd.on && Math.abs(dx) < 6) return;
+    rd.on = true; rd.r.scrollLeft = rd.l - dx;
+  });
+  document.addEventListener('pointerup', () => { if (rd && rd.on) { swallowClick = true; setTimeout(() => { swallowClick = false; }, 60); } rd = null; });
   document.addEventListener('pointerup', endShelf);
   document.addEventListener('pointercancel', endShelf);
 

@@ -161,11 +161,6 @@
   function syncDet(c, animate) {
     const sc = c.querySelector('.screen[data-screen="detail"]'); if (!sc) return;
     const track = sc.querySelector('.det-track'), pager = sc.querySelector('.det-pager');
-    const panels = [...sc.querySelectorAll('.det-panel')];
-    panels.forEach((p, i) => p.classList.toggle('dp-on', i === S.det));
-    if (track) track.style.transform = `translateX(${-S.det * DIM[c.dataset.cv][0]}px)`;
-    const p = panels[S.det];
-    if (pager && p && p.offsetHeight) pager.style.height = p.offsetHeight + 'px';
     sc.querySelectorAll('.dtab').forEach((t, i) => t.classList.toggle('dt-on', i === S.det));
     const on = sc.querySelector('.dtab.dt-on'), ul = sc.querySelector('.det-ul');
     if (on && ul && ul.offsetParent && on.offsetWidth) {
@@ -373,11 +368,36 @@
     }
     return false;
   }
+  // detail tabs scroll the page to their section (sections are stacked; the tab row is sticky)
+  const DGAP = { p: 56, l: 40, m: 31 };
+  let detLock = false;   // set by a tab tap; released by the next manual scroll gesture
+  ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { detLock = false; }, { capture: true, passive: true }));
+  function detGeo(c) {
+    const sc = c.querySelector('.screen[data-screen="detail"]'); if (!sc) return null;
+    const sr = sc.querySelector('.scroller'), st = sc.querySelector('.det-stick');
+    if (!sr || !st) return null;
+    const s = c._s || 1, r0 = sr.getBoundingClientRect().top;
+    const top = parseFloat(getComputedStyle(st).top) || 0;
+    const off = top + st.offsetHeight + DGAP[c.dataset.cv];
+    const secs = [...sc.querySelectorAll('.det-panel')].map(p => (p.getBoundingClientRect().top - r0) / s + sr.scrollTop);
+    return { sr, off, secs };
+  }
   function setDet(i) {
     i = Math.max(0, Math.min(2, i));
-    if (i === S.det) { syncDet(canv[cur]); return; }
-    S.det = i; motion(520); syncDet(canv[cur]);
+    S.det = i; syncDet(canv[cur]);
+    const g = detGeo(canv[cur]); if (!g) return;
+    setTimeout(() => { detLock = true; }, 0);
+    g.sr.scrollTo({ top: Math.max(0, Math.min(g.secs[i] - g.off, g.sr.scrollHeight - g.sr.clientHeight)), behavior: 'smooth' });
   }
+  document.addEventListener('scroll', e => {   // underline follows the section under the pinned tabs
+    if (S.screen !== 'detail' || !cur || detLock) return;
+    const t = e.target; if (!t.classList || !t.classList.contains('scroller') || !t.closest('.screen[data-screen="detail"]')) return;
+    const g = detGeo(canv[cur]); if (!g) return;
+    let i = 0;
+    g.secs.forEach((y, k) => { if (g.sr.scrollTop + g.off + 2 >= y) i = k; });
+    if (g.sr.scrollTop + g.sr.clientHeight >= g.sr.scrollHeight - 2) i = 2;
+    if (i !== S.det) { S.det = i; syncDet(canv[cur]); }
+  }, true);
 
   let swallowClick = false;
   document.getElementById('stage').addEventListener('click', e => {
@@ -440,6 +460,7 @@
   // swipe between the concern-detail tabs
   let drag = null;
   document.addEventListener('pointerdown', e => {
+    return;   // 1016: sections stack vertically now; no sideways swipe
     const pager = e.target.closest && e.target.closest('.det-pager');
     if (!pager || S.screen !== 'detail') return;
     drag = { x: e.clientX, y: e.clientY, pager, track: pager.querySelector('.det-track'), on: false, id: e.pointerId };

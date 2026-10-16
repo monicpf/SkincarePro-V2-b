@@ -19,7 +19,7 @@
   };
   const photoKey = () => {
     if (S.mode === 'original') return 'orig';
-    if (S.rs === 'X' && S.cs) return (S.mode === 'focus' ? 'f-' : 'a-') + S.cs + (S.cc === 'Skin Type' && S.sub && S.sub !== 'Full Face' ? (S.sub === 'T-Zone' ? '_t' : '_u') : '');
+    if (S.rs === 'X' && S.cs) return (S.mode === 'focus' ? 'f-' : 'a-') + S.cs;   // Skin Type zones highlight only; the photo stays
     if (S.mode === 'focus') return 'fwr';
     return S.rs === 'W' ? 'wr' : 'all';
   };
@@ -364,7 +364,7 @@
         }
       }
       const sr = el.closest && el.closest('.srow');
-      if (sr) { if (S.sub !== sr.dataset.sub) { S.sub = sr.dataset.sub; apply(); } return true; }   // sub rows: re-tap keeps the selection; Skin Type zones also swap the photo
+      if (sr) { if (S.sub !== sr.dataset.sub) { S.sub = sr.dataset.sub; apply(); } return true; }   // sub rows: re-tap keeps the selection; the photo stays
       if (el.closest && el.closest('.st-type')) {
         if (!(S.rs === 'X' && S.cc === 'Skin Type')) { S.rs = 'X'; S.cc = 'Skin Type'; S.cs = 'skintype'; S.sub = 'Full Face'; apply(); revealSkinType(); }
         return true;
@@ -544,7 +544,7 @@
       case 3: return firstVis(sc, '[data-name="concern_card_Redness"]');
       case 4: return firstVis(sc, '.dp-on [data-name="btn_matching_products"]');
       case 5: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');
-      case 6: return firstVis(sc, '.fixedlayer [data-name^="btn_skincarepro_back"]');
+      case 6: return firstVis(sc, ':is([data-name^="btn_skincarepro_home"],[data-name^="btn_y4b_skincarecm_home"])');
     }
   }
   // each page points at its own next step, whatever was skipped elsewhere

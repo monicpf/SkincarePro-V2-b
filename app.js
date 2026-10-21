@@ -127,8 +127,22 @@
       const ag = rf.querySelector('.score-blk');   // Skin Age keeps a 20px gap above the shelf, open or collapsed
       if (ag && o && k && o.offsetHeight) { ag.style.top = (o.offsetTop - ag.offsetHeight - 20) + 'px'; ag.style.setProperty('--sc-d', (k.offsetTop - o.offsetTop) + 'px'); }
     }
-    c.querySelectorAll('.wr-sub').forEach(w => { w.style.height = S.rs === 'W' && !S.fold ? w.scrollHeight + 'px' : '0px'; });
-    c.querySelectorAll('.xsub').forEach(w => { const on = S.rs === 'X' && S.cc === w.dataset.for && !S.fold; w.classList.toggle('open', on); w.style.height = on ? w.scrollHeight + 'px' : '0px'; });
+    const hz = c.classList.contains('cv-m');   // 1021: mobile sub-items open sideways in the horizontal concern row
+    const grow = (w, on) => { if (hz) { w.style.height = ''; w.style.width = on ? w.scrollWidth + 'px' : '0px'; } else w.style.height = on ? w.scrollHeight + 'px' : '0px'; };
+    c.querySelectorAll('.wr-sub').forEach(w => grow(w, S.rs === 'W' && !S.fold));
+    c.querySelectorAll('.xsub').forEach(w => { const on = S.rs === 'X' && S.cc === w.dataset.for && !S.fold; w.classList.toggle('open', on); grow(w, on); });
+    if (hz) {   // 1021: bring the picked concern (and its sideways sub-items) into view in the mobile row (Figma B_m5: row scrolled so it sits ~27px in)
+      const key = S.rs === 'W' ? 'W' : (S.rs === 'X' ? 'X:' + S.cc : '');
+      c.querySelectorAll('.result-frame .ccol > .clist').forEach(l => {
+        if (!key || l.dataset.sel === key) { if (!key) l.dataset.sel = ''; return; }
+        const el = S.rs === 'W' ? l.querySelector('.wr-row') : [...l.querySelectorAll('[data-cc]')].find(x => x.dataset.cc === S.cc);
+        if (!el) return;
+        l.dataset.sel = key;
+        const sc = c._s || 1, x = (el.getBoundingClientRect().left - l.getBoundingClientRect().left) / sc + l.scrollLeft;   // element px (canvas is scaled)
+        setTimeout(() => l.scrollTo({ left: Math.max(0, x - 27), behavior: 'smooth' }), 60);
+      });
+    }
+    if (hz && rf) { const o = rf.querySelector('.shelf-o'), k = rf.querySelector('.shelf-c'); if (o && k && o.offsetHeight) { rf.style.setProperty('--shm-o', o.offsetHeight + 'px'); rf.style.setProperty('--shm-c', k.offsetHeight + 'px'); } }
     syncDet(c);
   }
 
@@ -290,13 +304,24 @@
     S.screen = 'report'; S.dd = false; apply(false);
     document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.scrollTop = +(sr.dataset.keep || 0); });
   }
+  // 1020: one detail screen, content swapped per concern (Wrinkles lives in <template class="det-tpl">)
+  function swapDet() {
+    const dc = S.dc || 'Redness';
+    document.querySelectorAll('.screen[data-screen="detail"]').forEach(sc => {
+      if ((sc.dataset.dc || 'Redness') === dc) return;
+      const sr = sc.querySelector('.scroller'), tpl = sc.querySelector('template.det-tpl[data-dc="' + dc + '"]');
+      if (!sc._red) sc._red = sr.innerHTML;
+      sr.innerHTML = dc === 'Redness' ? sc._red : (tpl ? tpl.innerHTML : sc._red);
+      sr.scrollTop = 0; sc.dataset.dc = dc;
+    });
+  }
   function go(screen, opts = {}) {
     if (screen !== S.screen && S.screen !== 'take') S.hist.push(S.screen);   // back returns to whichever page this one was opened from
     if (S.screen === 'report') document.querySelectorAll('.screen[data-screen="report"] .scroller').forEach(sr => { sr.dataset.keep = sr.scrollTop; });
     S.screen = screen;
     if (opts.rec) S.rec = opts.rec;
     if (opts.filter) S.filter = opts.filter;
-    if (screen === 'detail') { S.det = 0; S.fm = false; }
+    if (screen === 'detail') { S.det = 0; S.fm = false; swapDet(); }
     S.dd = false;
     apply(true);
   }
@@ -389,8 +414,9 @@
       if (rtm) { switchRec(rtm[1].toLowerCase()); return true; }   // swaps only the card row; concerns / photo / insight keep their state
       return false;
     }
-    if (name === 'concern_card_Redness') { advance(3); go('detail'); return true; }
-    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: 'Redness' }); return true; }
+    if (name === 'concern_card_Redness') { advance(3); S.dc = 'Redness'; go('detail'); return true; }
+    if (name === 'concern_card_Wrinkles') { S.dc = 'Wrinkles'; go('detail'); return true; }   // 1020: Wrinkles detail (template variant)
+    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc || 'Redness' }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
     if (name === 'tab_Get Report') { advance(4); advance(5); if (S.screen !== 'share') go('share'); return true; }
@@ -672,8 +698,13 @@
   // hide the hint while anything scrolls; bring it back once scrolling settles
   // concerns list fade mask (Figma 4754:25737): top once scrolled, bottom while more content is below
   function syncFade(l) {
+    if (l.closest('.cv-m')) {   // 1021: mobile concerns are a horizontal row — fade left / right edges instead
+      l.classList.toggle('fade-t', l.scrollLeft > 2);
+      l.classList.toggle('fade-b', l.scrollLeft + l.clientWidth < l.scrollWidth - 2);
+    } else {
     l.classList.toggle('fade-t', l.scrollTop > 2);
     l.classList.toggle('fade-b', l.scrollTop + l.clientHeight < l.scrollHeight - 2);
+    }
   }
   const fadeAll = () => document.querySelectorAll('.clist').forEach(syncFade);
   document.addEventListener('scroll', e => {

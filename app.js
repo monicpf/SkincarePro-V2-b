@@ -382,6 +382,7 @@
       }
       if (isGlasses(name)) { S.dd = !S.dd; if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true; }   // View Report hint 2s after the first preview-mode tap
       if (name === 'handelr') { S.shelf = !S.shelf; if (S.shelf) advance(0); apply(); return true; }
+      if (/^AI_Insight/.test(name) && !S.shelf && el.closest && el.closest('.result-frame .shelf')) { S.shelf = true; advance(0); apply(); return true; }   // 1021b: summary card also opens the shelf
       // 1016 concern rules: one filled circle; re-tapping a selected circle does nothing; the − badge folds the group back
       const clearSel = () => { S.rs = 'C'; S.cc = null; S.cs = null; S.sub = null; S.fold = false; if (S.mode === 'focus') S.mode = 'analysis'; apply(); };
       const isMinus = name === 'badge_minus' || (el.classList && el.classList.contains('st-minus'));

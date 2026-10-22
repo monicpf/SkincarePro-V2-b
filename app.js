@@ -751,3 +751,11 @@
   window.addEventListener('resize', () => setTimeout(preloadPhotos, 600));
   window.__proto = { get state() { return S; }, go, startTake, setDet };
 })();
+
+// 1022f: pressed state for Elevated concern cards (class, so it also shows on iOS where :active is unreliable)
+(function () {
+  let on = null;
+  const off = () => { if (on) { on.classList.remove('is-pressed'); on = null; } };
+  document.addEventListener('pointerdown', e => { const c = e.target.closest && e.target.closest('.cc-elev'); if (!c) return; off(); on = c; c.classList.add('is-pressed'); }, { capture: true, passive: true });
+  ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, () => setTimeout(off, 90), { capture: true, passive: true }));
+})();

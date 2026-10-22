@@ -14,3 +14,7 @@
 .cc-arr .cc-go{position:absolute;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;pointer-events:none}
 .cv-m .cc-arr .cc-go{right:16px;bottom:16px;width:28px;height:28px}
 @media (prefers-reduced-motion:reduce){.cc-arr{transition:none}}
+/* 1022t Skin Type entry row (Figma C) */
+.st-row{background:#f5f5f7;-webkit-tap-highlight-color:transparent;transition:background .12s}
+.st-row.is-pressed,.st-row:active{background:#e8e8ed}
+.st-row .st-go{flex-shrink:0;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}

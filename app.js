@@ -782,6 +782,6 @@
 (function () {
   let on = null;
   const off = () => { if (on) { on.classList.remove('is-pressed'); on = null; } };
-  document.addEventListener('pointerdown', e => { const c = e.target.closest && e.target.closest('.cc-arr'); if (!c) return; off(); on = c; c.classList.add('is-pressed'); }, { capture: true, passive: true });
+  document.addEventListener('pointerdown', e => { const c = e.target.closest && e.target.closest('.cc-arr, .st-row'); if (!c) return; off(); on = c; c.classList.add('is-pressed'); }, { capture: true, passive: true });
   ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, () => setTimeout(off, 90), { capture: true, passive: true }));
 })();

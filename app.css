@@ -45,10 +45,13 @@
 :is(.cv-p,.cv-l) .screen[data-screen=detail] :is([data-name=tiles],[data-name=steps]){align-items:stretch!important}
 .cv-m .screen[data-screen=detail] [data-name^=factor_] p,.cv-m .screen[data-screen=detail] [data-name^=step_] [data-name=text]>*{height:auto!important}
 .cv-m .screen[data-screen=detail] :is([data-name=tiles],[data-name=steps])>*{height:auto!important}
-/* 1022af: Report concern cards per Figma 5079:37724 — padding 32/32/69/32, photo–text gap 20, arrow 32 from right/bottom; mobile 24/24/50/24, gap 16, arrow 24/20 */
-:is(.cv-p,.cv-l) .cc-arr{padding:32px 32px 69px 32px!important}
+/* 1022ag: Report concern cards per Monic's guideline frames (p1/L1/m1_new) — padding 32 (mobile 24/24/36/24), photo–text gap 20 (16),
+   arrow button in flow under the summary, right-aligned, 6px below it (mobile 10px); iPad summary fixed (6 / 4 lines), mobile summary hugs */
+:is(.cv-p,.cv-l) .cc-arr{padding:32px!important}
 :is(.cv-p,.cv-l) .cc-arr>div:first-child{gap:20px!important}
-:is(.cv-p,.cv-l) .cc-arr .cc-go{right:32px;bottom:32px}
-.cv-m .cc-arr{padding:24px 24px 50px 24px!important}
+.cc-arr .cc-go{position:static!important;align-self:flex-end;flex-shrink:0}
+:is(.cv-p,.cv-l) .cc-arr .cc-go{margin-top:-14px}
+.cv-m .cc-arr{padding:24px 24px 36px 24px!important}
 .cv-m .cc-arr>div:first-child{gap:16px!important}
-.cv-m .cc-arr .cc-go{right:24px;bottom:20px}
+.cv-m .cc-arr .cc-go{margin-top:-4px}
+.cv-m .cc-arr [data-name=summary]{height:auto!important;display:block!important;-webkit-line-clamp:unset!important}

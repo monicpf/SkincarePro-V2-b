@@ -78,3 +78,13 @@
 .cv-m .screen[data-screen=detail] [data-name=dailycare]>[data-name=img_powered_by_en_blk]{margin-top:120px!important}
 .cv-p .screen[data-screen=detail] [data-name^=point_]>p:last-child{max-height:152px;overflow:hidden}
 .cv-l .screen[data-screen=detail] [data-name^=point_]>p:last-child{max-height:114px;overflow:hidden}
+/* 1022ak: Monic's rule — Key Points / Contributing Factors / Daily Care bodies reserve room for 150 characters on iPad, side-by-side cards equal height
+   KP body p 266 (7 lines) / L 190 (5) -> cards 380 / 304; factor body p 192 / L 160 -> cards 426 / 394; step body p 160 / L 192 -> cards 296 / 328 */
+.cv-p .screen[data-screen=detail] [data-name^=point_]{height:380px!important}
+.cv-l .screen[data-screen=detail] [data-name^=point_]{height:304px!important}
+.cv-p .screen[data-screen=detail] [data-name^=point_]>p:last-child{height:266px!important;max-height:none}
+.cv-l .screen[data-screen=detail] [data-name^=point_]>p:last-child{height:190px!important;max-height:none}
+.cv-p .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:192px!important}
+.cv-l .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:160px!important}
+.cv-p .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:160px!important}
+.cv-l .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:192px!important}

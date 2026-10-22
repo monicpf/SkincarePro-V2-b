@@ -28,7 +28,8 @@
 /* 1022z: Report header — Skin Score / Age labels line up with the Skin Type row's label (row padding-top 28) */
 :is(.cv-p,.cv-l) [data-name=stats]:has(>[data-name=skintype_row]){align-items:flex-start!important}
 :is(.cv-p,.cv-l) [data-name=stats]:has(>[data-name=skintype_row])>[data-name=scoreAge]{margin-top:28px}
-.cv-l [data-name=stats]:has(>[data-name=skintype_row])>[data-name=scoreAge]{margin-bottom:-17px}
+.cv-l [data-name=stats]:has(>[data-name=skintype_row])>[data-name=scoreAge]{margin-top:24px;margin-bottom:-3px}
+.cv-l [data-name=skintype_row]{padding-top:24px!important;padding-bottom:44px!important}   /* 1022ac: card ends below the Score / Age numbers */
 /* 1022ab: detail Analysis / Focus Map toggle — two equal options, still centred on the photo */
 .det-toggle{left:50%!important;transform:translateX(-50%)}
 .det-toggle .vt-opt{justify-content:center;box-sizing:border-box}

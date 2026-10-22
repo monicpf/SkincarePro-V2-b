@@ -35,3 +35,20 @@
 .det-toggle .vt-opt{justify-content:center;box-sizing:border-box}
 :is(.cv-p,.cv-l) .det-toggle .vt-opt{width:200px;padding-left:0!important;padding-right:0!important}
 .cv-m .det-toggle .vt-opt{width:132px;padding-left:0!important;padding-right:0!important}
+/* 1022ae: Contributing Factors + Daily Care cards — iPad: title fixed 2 lines, body fixed to 150 characters, every card in a row the same height; mobile: fixed width, height hugs */
+.cv-p .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(1),.cv-l .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(1),
+.cv-p .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:first-child,.cv-l .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:first-child{height:72px!important;overflow:hidden}
+.cv-p .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:192px!important;overflow:hidden}
+.cv-l .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:160px!important;overflow:hidden}
+.cv-p .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:160px!important;overflow:hidden}
+.cv-l .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:192px!important;overflow:hidden}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] :is([data-name=tiles],[data-name=steps]){align-items:stretch!important}
+.cv-m .screen[data-screen=detail] [data-name^=factor_] p,.cv-m .screen[data-screen=detail] [data-name^=step_] [data-name=text]>*{height:auto!important}
+.cv-m .screen[data-screen=detail] :is([data-name=tiles],[data-name=steps])>*{height:auto!important}
+/* 1022af: Report concern cards per Figma 5079:37724 — padding 32/32/69/32, photo–text gap 20, arrow 32 from right/bottom; mobile 24/24/50/24, gap 16, arrow 24/20 */
+:is(.cv-p,.cv-l) .cc-arr{padding:32px 32px 69px 32px!important}
+:is(.cv-p,.cv-l) .cc-arr>div:first-child{gap:20px!important}
+:is(.cv-p,.cv-l) .cc-arr .cc-go{right:32px;bottom:32px}
+.cv-m .cc-arr{padding:24px 24px 50px 24px!important}
+.cv-m .cc-arr>div:first-child{gap:16px!important}
+.cv-m .cc-arr .cc-go{right:24px;bottom:20px}

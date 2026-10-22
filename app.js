@@ -385,6 +385,7 @@
     if (S.screen === 'take') return true;
     if (S.screen === 'result' && (isBack(name) || isHome(name))) return true;   // disabled on the result page
     if (isBack(name)) {   // report / concern detail / recommendations / get report: back to the page it was opened from
+      if (S.screen === 'report') S.hist = [];   // 1022y: Report's back always returns to the photo result page
       const prev = S.hist.pop() || (S.screen === 'share' ? null : 'result');
       if (!prev) startTake();
       else if (prev === 'report') backToReport();   // keeps the report's scroll position

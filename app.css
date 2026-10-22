@@ -59,3 +59,22 @@
 .screen[data-screen=detail] :is([data-name^=point_],[data-name^=factor_])>p,.screen[data-screen=detail] [data-name^=point_]>div:not([data-name=concern_accent])>p,
 .screen[data-screen=detail] [data-name^=step_] [data-name=text]>*,.screen[data-screen=detail] [data-name^=step_] [data-name=text]>div>p{width:100%!important;min-width:0!important;max-width:100%!important}
 .screen[data-screen=detail] [data-name^=point_]>div:not([data-name=concern_accent]){align-self:stretch;width:auto!important}
+/* 1022aj: concern detail below Key Points per Monic's guideline frames (p 5001:32024 / L 5001:32460 / m 5001:32937)
+   iPad: Key Point cards fixed (p 412x266, L 520x228); Matching Products button hugs (pad 30/40, 100 tall);
+   Contributing Factors card title 72 / body 128 (cards 362); Daily Care title 72 / body p 96, L 128 (cards p 232, L 264) */
+.cv-p .screen[data-screen=detail] [data-name^=point_]{height:266px!important}
+.cv-l .screen[data-screen=detail] [data-name^=point_]{height:228px!important}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name^=point_]>p:last-child{height:auto!important}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=btn_matching_products]{width:auto!important;height:100px!important;padding:30px 40px!important}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=btn_matching_products]>p{flex:none!important;width:auto!important;height:40px!important;line-height:40px!important;white-space:nowrap}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:128px!important}
+.cv-p .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:96px!important}
+.cv-l .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:128px!important}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name^=point_]>p:first-of-type{height:28px!important}
+:is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name^=factor_] [data-name=level]>p{height:50px!important}
+.cv-m .screen[data-screen=detail] [data-name^=point_] p{height:auto!important}
+.cv-m .screen[data-screen=detail] [data-name^=factor_] [data-name=level]{gap:8px!important}
+.cv-m .screen[data-screen=detail] [data-name^=factor_] [data-name=level]>p{height:25px!important}
+.cv-m .screen[data-screen=detail] [data-name=dailycare]>[data-name=img_powered_by_en_blk]{margin-top:120px!important}
+.cv-p .screen[data-screen=detail] [data-name^=point_]>p:last-child{max-height:152px;overflow:hidden}
+.cv-l .screen[data-screen=detail] [data-name^=point_]>p:last-child{max-height:114px;overflow:hidden}

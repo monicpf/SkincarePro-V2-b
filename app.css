@@ -29,3 +29,8 @@
 :is(.cv-p,.cv-l) [data-name=stats]:has(>[data-name=skintype_row]){align-items:flex-start!important}
 :is(.cv-p,.cv-l) [data-name=stats]:has(>[data-name=skintype_row])>[data-name=scoreAge]{margin-top:28px}
 .cv-l [data-name=stats]:has(>[data-name=skintype_row])>[data-name=scoreAge]{margin-bottom:-17px}
+/* 1022ab: detail Analysis / Focus Map toggle — two equal options, still centred on the photo */
+.det-toggle{left:50%!important;transform:translateX(-50%)}
+.det-toggle .vt-opt{justify-content:center;box-sizing:border-box}
+:is(.cv-p,.cv-l) .det-toggle .vt-opt{width:200px;padding-left:0!important;padding-right:0!important}
+.cv-m .det-toggle .vt-opt{width:132px;padding-left:0!important;padding-right:0!important}

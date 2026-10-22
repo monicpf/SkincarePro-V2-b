@@ -436,7 +436,7 @@
     if (name === 'concern_card_Redness') { advance(3); S.dc = 'Redness'; go('detail'); return true; }
     { const cm = /^concern_card_(.+)$/.exec(name || '');   // 1022v: every concern card opens its own detail (template variant)
       if (cm) { S.dc = cm[1]; go('detail'); return true; } }
-    if (el.closest && el.closest('.st-row')) { S.dc = 'Skin Type'; go('detail'); return true; }   // 1022v: Report header Skin Type row
+    if (el.closest && el.closest('.st-entry')) { S.dc = 'Skin Type'; go('detail'); return true; }   // 1022v: Report header Skin Type row
     if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc || 'Redness' }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
@@ -803,6 +803,6 @@
 (function () {
   let on = null;
   const off = () => { if (on) { on.classList.remove('is-pressed'); on = null; } };
-  document.addEventListener('pointerdown', e => { const c = e.target.closest && e.target.closest('.cc-arr, .st-row'); if (!c) return; off(); on = c; c.classList.add('is-pressed'); }, { capture: true, passive: true });
+  document.addEventListener('pointerdown', e => { const c = e.target.closest && e.target.closest('.cc-arr, .st-entry'); if (!c) return; off(); on = c; c.classList.add('is-pressed'); }, { capture: true, passive: true });
   ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, () => setTimeout(off, 90), { capture: true, passive: true }));
 })();

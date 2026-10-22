@@ -15,9 +15,9 @@
 .cv-m .cc-arr .cc-go{right:16px;bottom:16px;width:28px;height:28px}
 @media (prefers-reduced-motion:reduce){.cc-arr{transition:none}}
 /* 1022t Skin Type entry row (Figma C) */
-.st-row{background:#f5f5f7;-webkit-tap-highlight-color:transparent;transition:background .12s}
-.st-row.is-pressed,.st-row:active{background:#e8e8ed}
-.st-row .st-go{flex-shrink:0;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.st-entry{background:#f5f5f7;-webkit-tap-highlight-color:transparent;transition:background .12s}
+.st-entry.is-pressed,.st-entry:active{background:#e8e8ed}
+.st-entry .st-go{flex-shrink:0;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
 /* 1022w: detail stats per Report_p2/L2 — every column starts at the top (labels on one line), values sit label+gap below */
 .screen[data-screen=detail] [data-name=stats]{align-items:flex-start!important}
 .screen[data-screen=detail] [data-name=stats]>div:not([data-name=divider]){align-self:flex-start!important;height:auto!important}

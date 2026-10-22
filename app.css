@@ -51,7 +51,7 @@
 :is(.cv-p,.cv-l) .cc-arr>div:first-child{gap:20px!important}
 .cc-arr .cc-go{position:static!important;align-self:flex-end;flex-shrink:0}
 :is(.cv-p,.cv-l) .cc-arr .cc-go{margin-top:-14px}
-.cv-m .cc-arr{padding:24px 24px 36px 24px!important}
+.cv-m .cc-arr{padding:24px!important}
 .cv-m .cc-arr>div:first-child{gap:16px!important}
 .cv-m .cc-arr .cc-go{margin-top:-4px}
 .cv-m .cc-arr [data-name=summary]{height:auto!important;display:block!important;-webkit-line-clamp:unset!important}

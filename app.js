@@ -147,9 +147,14 @@
   }
 
   // concern filter chips: highlight the active one and name it in the list header
+  function focusChips(c) {   // 1022v: keep the focused concern chip in view (runs again once the screen is laid out)
+    c.querySelectorAll('.chiprow').forEach(r => { const ch = r.querySelector('.chip-on');
+      if (ch && r.clientWidth) r.scrollLeft = Math.max(0, ch.offsetLeft - (r.clientWidth - ch.offsetWidth) / 2); });
+  }
   function syncChips(c) {
     const on = S.filter === 'all' ? 'chip_All' : 'chip_' + S.filter;
     c.querySelectorAll('.chiprow [data-name^="chip_"]').forEach(ch => ch.classList.toggle('chip-on', ch.getAttribute('data-name') === on));
+    focusChips(c);
     recFill(c);
   }
   // recommendation lists: demo data reshuffled per concern (repeated items, different counts) and animated in
@@ -285,7 +290,7 @@
       if (cv === cur) syncLive(c); else { c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W' || S.fold) w.style.height = '0px'; }); c.querySelectorAll('.xsub').forEach(w => { if (!(S.rs === 'X' && S.cc === w.dataset.for) || S.fold) w.style.height = '0px'; }); }
     }
     motion(520);
-    requestAnimationFrame(() => { if (cur) syncDet(canv[cur]); });
+    requestAnimationFrame(() => { if (cur) { syncDet(canv[cur]); focusChips(canv[cur]); } placePills(); });
     setTimeout(() => { if (cur) syncDet(canv[cur]); updateHint(); }, 540);
   }
   function revealSkinType() { setTimeout(() => { const l = canv[cur] && canv[cur].querySelector('.clist'); if (l) smoothTo(l, 0); }, 60); }
@@ -313,6 +318,18 @@
       if (!sc._red) sc._red = sr.innerHTML;
       sr.innerHTML = dc === 'Redness' ? sc._red : (tpl ? tpl.innerHTML : sc._red);
       sr.scrollTop = 0; sc.dataset.dc = dc;
+    });
+    requestAnimationFrame(placePills);
+  }
+  // 1022v: score pills sit inside their class segment (<=68 Fair / 69-88 Average / >=89 Ideal)
+  function placePills() {
+    document.querySelectorAll('[data-name="score"][data-v]').forEach(pl => {
+      const v = +pl.dataset.v, bar = pl.parentElement.querySelector('[data-name="bar"]'); if (!bar) return;
+      const segs = [...bar.children]; if (segs.length < 3 || !segs[0].offsetWidth) return;
+      const k = v <= 68 ? 0 : v <= 88 ? 1 : 2, f = k === 0 ? (v - 40) / 29 : k === 1 ? (v - 69) / 20 : (v - 89) / 11;
+      const sg = segs[k], w = pl.offsetWidth, x0 = sg.offsetLeft, x1 = x0 + sg.offsetWidth;
+      const c = Math.min(x1 - w / 2, Math.max(x0 + w / 2, x0 + Math.max(0, Math.min(1, f)) * sg.offsetWidth));
+      pl.style.left = (c - w / 2) + 'px';
     });
   }
   function go(screen, opts = {}) {
@@ -416,8 +433,10 @@
       return false;
     }
     if (name === 'concern_card_Redness') { advance(3); S.dc = 'Redness'; go('detail'); return true; }
-    if (name === 'concern_card_Wrinkles') { S.dc = 'Wrinkles'; go('detail'); return true; }   // 1020: Wrinkles detail (template variant)
-    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc || 'Redness' }); return true; }
+    { const cm = /^concern_card_(.+)$/.exec(name || '');   // 1022v: every concern card opens its own detail (template variant)
+      if (cm) { S.dc = cm[1]; go('detail'); return true; } }
+    if (el.closest && el.closest('.st-row')) { S.dc = 'Skin Type'; go('detail'); return true; }   // 1022v: Report header Skin Type row
+    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc === 'Skin Type' ? 'all' : (S.dc || 'Redness') }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
     if (name === 'tab_Get Report') { advance(4); advance(5); if (S.screen !== 'share') go('share'); return true; }
@@ -482,7 +501,8 @@
     return i;
   }
   function setDet(i) {
-    i = Math.max(0, Math.min(2, i));
+    { const sc = canv[cur] && canv[cur].querySelector('.screen[data-screen="detail"]'); const n = sc ? sc.querySelectorAll('.det-panel').length : 3;
+      i = Math.max(0, Math.min(n - 1, i)); }   // 1022v: Skin Type has 2 sections
     clearTimeout(spyTimer); spyTimer = 0; spyTarget = null;
     S.det = i; syncDet(canv[cur]);
     const g = detGeo(canv[cur]); if (!g) return;

@@ -11,3 +11,6 @@
 
 /* 1022g: portrait detail tabs all Semibold (Figma Report_p2_new) */
 .cv-p .dtab{font-weight:590!important}
+
+/* 1022i: landscape + mobile detail tabs all Semibold (portrait guideline) */
+.cv-l .dtab,.cv-m .dtab{font-weight:590!important}

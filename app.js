@@ -321,7 +321,7 @@
     S.screen = screen;
     if (opts.rec) S.rec = opts.rec;
     if (opts.filter) S.filter = opts.filter;
-    if (screen === 'detail') { S.det = 0; S.fm = false; swapDet(); }
+    if (screen === 'detail') { S.det = 0; S.fm = false; spyTarget = null; swapDet(); }
     S.dd = false;
     apply(true);
   }
@@ -441,7 +441,7 @@
     return false;
   }
   // detail tabs scroll the page to their section (sections are stacked; the tab row is sticky)
-  const DGAP = { p: 56, l: 40, m: 31 };
+  const DGAP = { p: 40, l: 40, m: 31 };   // 1022l: hairline -> content gap per Report_p2_new
   let detLock = false;   // set by a tab tap; released by the next manual scroll gesture
   ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { detLock = false; }, { capture: true, passive: true }));
   function detGeo(c) {
@@ -454,8 +454,36 @@
     const secs = [...sc.querySelectorAll('.det-panel')].map(p => (p.getBoundingClientRect().top - r0) / s + sr.scrollTop);
     return { sr, off, secs };
   }
+  // 1022l: scroll spy never skips a tab — a jump of 2 slides through the middle tab (120ms per step)
+  let spyTarget = null, spyTimer = 0;
+  function spyStepTo(t) {
+    spyTarget = t; if (spyTimer) return;
+    const step = () => {
+      spyTimer = 0;
+      if (S.screen !== 'detail' || detLock || spyTarget === null || S.det === spyTarget) return;
+      S.det += Math.sign(spyTarget - S.det); syncDet(canv[cur]);
+      if (S.det !== spyTarget) spyTimer = setTimeout(step, 120);
+    };
+    step();
+  }
+  // 1022l: which section is "being read" — reading line 1/3 down the area below the pinned tabs;
+  // sections too far down to ever reach that line share the last stretch of scroll evenly (the last one = bottom)
+  function spyIndex(g) {
+    const y = g.sr.scrollTop, max = g.sr.scrollHeight - g.sr.clientHeight;
+    const line = g.off + (g.sr.clientHeight - g.off) / 3;
+    const T = g.secs.map(v => v - line);
+    const j = T.findIndex(t => t > max - 2);
+    if (j > 0) {
+      const A = Math.max(T[j - 1], max - g.sr.clientHeight / 2), n = T.length;
+      for (let k = j; k < n; k++) T[k] = A + (max - A) * (k - j + 1) / (n - j);
+    }
+    let i = 0;
+    T.forEach((t, k) => { if (y >= t - 2) i = k; });
+    return i;
+  }
   function setDet(i) {
     i = Math.max(0, Math.min(2, i));
+    clearTimeout(spyTimer); spyTimer = 0; spyTarget = null;
     S.det = i; syncDet(canv[cur]);
     const g = detGeo(canv[cur]); if (!g) return;
     setTimeout(() => { detLock = true; }, 0);
@@ -472,10 +500,8 @@
     const g = detGeo(canv[cur]); if (!g) return;
     { const tl = g.sr.querySelector('.det-tail'), th = tl ? parseFloat(tl.style.height) || 0 : 0;   // drop the tail once it is out of view
       if (th && g.sr.scrollTop + g.sr.clientHeight < g.sr.scrollHeight - th - 2) tl.style.height = '0px'; }
-    let i = 0;
-    g.secs.forEach((y, k) => { if (g.sr.scrollTop + g.off + 2 >= y) i = k; });
-    if (g.sr.scrollTop + g.sr.clientHeight >= g.sr.scrollHeight - 2) i = 2;
-    if (i !== S.det) { S.det = i; syncDet(canv[cur]); }
+    const i = spyIndex(g);
+    if (i !== S.det || spyTimer) spyStepTo(i);
   }, true);
 
   let swallowClick = false, tapUntil = 0;

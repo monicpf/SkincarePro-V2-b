@@ -24,3 +24,4 @@
 .screen[data-screen=detail] [data-name=stats] [data-name=severity],.screen[data-screen=detail] [data-name=stats] [data-name=main_area]{height:auto!important}
 .screen[data-screen=detail] [data-name=stats] [data-name=divider]{align-self:center!important}
 .cv-p .screen[data-screen=detail] [data-name=stats] :is([data-name=severity],[data-name=main_area])>p:last-child,.cv-l .screen[data-screen=detail] [data-name=stats] :is([data-name=severity],[data-name=main_area])>p:last-child{font-size:28px!important;height:auto!important}
+.bg-\[\#dc666b\]{background-color:#dc666b}

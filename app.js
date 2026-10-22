@@ -179,10 +179,10 @@
     if (c._rf === f) return;
     const first = c._rf === undefined; c._rf = f;
     const ORDER = ['Redness', 'Droopy Lower Eyelid', 'Oiliness', 'Spots', 'Dark Circle', 'Droopy Upper Eyelid', 'Tear Trough', 'Pores',
-                   'Moisture', 'Wrinkles', 'Texture', 'Eye Bag', 'Firmness', 'Radiance', 'Acne'];
-    const NP = [4, 3, 5, 2, 6, 3, 5, 4, 6, 2, 5, 3, 4, 6, 2];
-    const TR = [6, 4, 7, 5, 3, 6, 4, 7, 5, 3, 6, 4, 7, 5, 3];   // routine steps (morning + night)
-    const TT = [4, 6, 3, 7, 2, 5, 8, 3, 6, 4, 7, 2, 5, 8, 3];   // treatments (non-surgical + surgical)
+                   'Moisture', 'Wrinkles', 'Texture', 'Eye Bag', 'Firmness', 'Radiance', 'Acne', 'Skin Type'];
+    const NP = [4, 3, 5, 2, 6, 3, 5, 4, 6, 2, 5, 3, 4, 6, 2, 5];
+    const TR = [6, 4, 7, 5, 3, 6, 4, 7, 5, 3, 6, 4, 7, 5, 3, 6];   // routine steps (morning + night)
+    const TT = [4, 6, 3, 7, 2, 5, 8, 3, 6, 4, 7, 2, 5, 8, 3, 6];   // treatments (non-surgical + surgical)
     const PERM = [[0, 1, 2, 3], [2, 0, 3, 1], [3, 2, 1, 0], [1, 3, 0, 2], [2, 3, 0, 1], [3, 0, 2, 1], [1, 2, 3, 0]];
     const MASK = { 4: [[0, 1, 2, 3]], 3: [[0, 2, 3], [0, 1, 3], [1, 2, 3], [0, 1, 2]], 2: [[0, 3], [0, 2], [1, 3], [0, 1]], 1: [[0], [2], [1], [3]] };
     const split = (t, i) => { const a = Math.min(4, Math.ceil(t / 2)); return i === 0 ? a : Math.max(1, t - a); };
@@ -436,7 +436,7 @@
     { const cm = /^concern_card_(.+)$/.exec(name || '');   // 1022v: every concern card opens its own detail (template variant)
       if (cm) { S.dc = cm[1]; go('detail'); return true; } }
     if (el.closest && el.closest('.st-row')) { S.dc = 'Skin Type'; go('detail'); return true; }   // 1022v: Report header Skin Type row
-    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc === 'Skin Type' ? 'all' : (S.dc || 'Redness') }); return true; }
+    if (name === 'btn_matching_products') { advance(4); go('rec', { rec: 'products', filter: S.dc || 'Redness' }); return true; }
     if (name === 'tab_Report') { if (S.screen !== 'report') go('report'); return true; }
     if (name === 'tab_Recommendation') { go('rec', { rec: 'products', filter: 'all' }); return true; }
     if (name === 'tab_Get Report') { advance(4); advance(5); if (S.screen !== 'share') go('share'); return true; }

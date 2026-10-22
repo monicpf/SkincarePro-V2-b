@@ -55,3 +55,7 @@
 .cv-m .cc-arr>div:first-child{gap:16px!important}
 .cv-m .cc-arr .cc-go{margin-top:-4px}
 .cv-m .cc-arr [data-name=summary]{height:auto!important;display:block!important;-webkit-line-clamp:unset!important}
+/* 1022ai: detail card texts fill their card (Figma: text layers FILL) — Key Points, Contributing Factors, Daily Care, every canvas */
+.screen[data-screen=detail] :is([data-name^=point_],[data-name^=factor_])>p,.screen[data-screen=detail] [data-name^=point_]>div:not([data-name=concern_accent])>p,
+.screen[data-screen=detail] [data-name^=step_] [data-name=text]>*,.screen[data-screen=detail] [data-name^=step_] [data-name=text]>div>p{width:100%!important;min-width:0!important;max-width:100%!important}
+.screen[data-screen=detail] [data-name^=point_]>div:not([data-name=concern_accent]){align-self:stretch;width:auto!important}

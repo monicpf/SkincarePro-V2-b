@@ -481,9 +481,14 @@
   let swallowClick = false, tapUntil = 0;
   // 1016: a tap near a visible +/− badge counts as that badge (the badges are tiny on the scaled canvas)
   function nearBadge(target, x, y) {
-    const col = target.closest && target.closest('.result-frame .ccol');
-    if (!col || x == null) return target;
-    const s = (canv[cur] && canv[cur]._s) || 1, R = (cur === 'm' ? 20 : 34) * s;
+    if (x == null) return target;
+    const s = (canv[cur] && canv[cur]._s) || 1, R = (cur === 'm' ? 32 : 56) * s;   // 1021f: bigger +/- tap area (Wrinkles, Pores, Skin Type)
+    let col = target.closest && target.closest('.result-frame .ccol');
+    if (!col) {   // a finger just outside the concern column/row (e.g. above the mobile row) still reaches its +/- badges
+      col = [...document.querySelectorAll('.canvas.active .result-frame .ccol')].find(c => { const r = c.getBoundingClientRect();
+        return r.width > 0 && x >= r.left - R && x <= r.right + R && y >= r.top - R && y <= r.bottom + R; });
+      if (!col) return target;
+    }
     let best = null, bd = 1e9;
     col.querySelectorAll('[data-name^="badge_"], .st-plus, .st-minus').forEach(bg => {
       if (getComputedStyle(bg).display === 'none') return;
@@ -508,6 +513,10 @@
   document.getElementById('stage').addEventListener('click', e => {
     if (swallowClick) { swallowClick = false; return; }
     if (Date.now() < tapUntil) return;   // already handled on touchend
+    if (S.screen === 'result' && S.shelf && e.target.closest &&   // 1021f: a tap on empty space (photo) closes the open shelf
+        !e.target.closest('.result-frame .shelf, .result-frame .ccol, .result-frame .st-type, [data-name^="btn"], [data-name*="back"], [data-name*="home"], [data-name="dropdown_photo_mode"], .vt-opt, .hint-layer')) {
+      S.shelf = false; apply(); return;
+    }
     dispatchTap(e.target, e.clientX, e.clientY);
   });
   // 1016: concern column taps fire on touchend (a tiny finger drift inside the scroll list used to cancel the click)

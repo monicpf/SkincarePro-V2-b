@@ -441,7 +441,7 @@
     return false;
   }
   // detail tabs scroll the page to their section (sections are stacked; the tab row is sticky)
-  const DGAP = { p: 40, l: 40, m: 31 };   // 1022l: hairline -> content gap per Report_p2_new
+  const DGAP = { p: 40, l: 40, m: 20 };   // 1022l: hairline -> content gap per Report_p2_new
   let detLock = false;   // set by a tab tap; released by the next manual scroll gesture
   ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { detLock = false; }, { capture: true, passive: true }));
   function detGeo(c) {

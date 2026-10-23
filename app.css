@@ -105,3 +105,12 @@
 /* 1022aw: mobile Routines step rows swipe horizontally; card stays 177, gap 12 -> 10 so step 3 peeks 16px; row bleeds to the right screen edge like the concern chips (Monic) */
 .cv-m .screen[data-screen=routines] [data-name="steps_row (scroll)"]{overflow-x:auto!important;overflow-y:hidden!important;gap:10px!important;margin-right:-24px;padding-right:24px;width:calc(100% + 24px)!important;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
 .cv-m .screen[data-screen=routines] [data-name="steps_row (scroll)"]::-webkit-scrollbar{display:none}
+/* 1022ax: mobile result — Skin Type label sat 4px below the other concern labels; align its baseline (Scott) */
+.cv-m .result-frame .ccol .st-type p.top-\[70px\]{top:66px!important}
+/* 1022ax: mobile result — gap between the score row labels and the bottom sheet 30 -> 15, both sheet states (Scott, value by Monic) */
+.cv-m .result-frame .ccol{bottom:calc(var(--shm-c,153px) - 11px)!important}
+.cv-m .result-frame.shelf-open .ccol{bottom:calc(var(--shm-o,453px) - 11px)!important}
+/* 1022ax: landscape result — AI Insight card text top-aligned instead of vertically centred, open + collapsed sheet (Scott) */
+.cv-l .result-frame .shelf [data-name^=AI_Insight]{align-items:flex-start!important}
+/* 1022ax: landscape header back button 99 -> 80, same size and position as the home button and the Result screen back (Scott, Monic) */
+.cv-l [data-name=crm_topper]>[data-name=btn_skincarepro_back]{inset:13.64% 93.49% 13.64% 2.34%!important}

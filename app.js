@@ -199,6 +199,7 @@
         else if (g.kind === 'step') { const n = Math.min(4, Math.max(3, split(TR[ix], i))), ms = MASK[n]; /* 1022as: every routine keeps at least 3 steps */ list = ms[(ix + i) % ms.length].filter(k => k < T.length).map(k => T[k]); }
         else list = pick(split(TT[ix], i));
         [...g.p.children].forEach(x => { if (isItem(x)) x.remove(); });
+        if (g.kind === 'step') g.p.scrollLeft = 0;   // 1022aw: a new filter starts the swipeable step row back at step 1
         list.forEach((t, k) => { const el = t.cloneNode(true); el.classList.add('rec-in'); el.style.animationDelay = (k * 60) + 'ms';
           if (g.kind === 'step') el.querySelectorAll('p').forEach(q => { if (/STEP\s*\d+/.test(q.textContent)) q.textContent = q.textContent.replace(/STEP\s*\d+/, 'STEP ' + (k + 1)); });   // 1022ar: steps renumber 1..n after a filter
           g.p.appendChild(el); });

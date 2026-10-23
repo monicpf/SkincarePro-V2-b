@@ -102,3 +102,6 @@
 .cv-m .screen[data-screen=detail] [data-name^=factor_]>p:last-of-type,.cv-m .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{line-height:19px!important}
 /* 1022aq: mobile concern filter chips — name hugs its text like iPad (was a fixed 177px from the Droopy Lower Eyelid frame) */
 .chiprow [data-name^=chip_]>div.ff-sf{width:auto!important;white-space:nowrap}
+/* 1022aw: mobile Routines step rows swipe horizontally; card stays 177, gap 12 -> 10 so step 3 peeks 16px; row bleeds to the right screen edge like the concern chips (Monic) */
+.cv-m .screen[data-screen=routines] [data-name="steps_row (scroll)"]{overflow-x:auto!important;overflow-y:hidden!important;gap:10px!important;margin-right:-24px;padding-right:24px;width:calc(100% + 24px)!important;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.cv-m .screen[data-screen=routines] [data-name="steps_row (scroll)"]::-webkit-scrollbar{display:none}

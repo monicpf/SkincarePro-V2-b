@@ -199,7 +199,9 @@
         else if (g.kind === 'step') { const n = split(TR[ix], i), ms = MASK[n]; list = ms[(ix + i) % ms.length].filter(k => k < T.length).map(k => T[k]); }
         else list = pick(split(TT[ix], i));
         [...g.p.children].forEach(x => { if (isItem(x)) x.remove(); });
-        list.forEach((t, k) => { const el = t.cloneNode(true); el.classList.add('rec-in'); el.style.animationDelay = (k * 60) + 'ms'; g.p.appendChild(el); });
+        list.forEach((t, k) => { const el = t.cloneNode(true); el.classList.add('rec-in'); el.style.animationDelay = (k * 60) + 'ms';
+          if (g.kind === 'step') el.querySelectorAll('p').forEach(q => { if (/STEP\s*\d+/.test(q.textContent)) q.textContent = q.textContent.replace(/STEP\s*\d+/, 'STEP ' + (k + 1)); });   // 1022ar: steps renumber 1..n after a filter
+          g.p.appendChild(el); });
         tot += list.length;
       });
       const p = sc.querySelector('[data-name="result_count"] p');

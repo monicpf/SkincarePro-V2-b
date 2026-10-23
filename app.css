@@ -98,3 +98,5 @@
 :is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=grid]:has(>[data-name^=point_]:nth-child(2):last-child)>[data-name^=point_]{flex:1 1 0!important;width:auto!important;min-width:0;height:228px!important}
 :is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=grid]:has(>[data-name^=point_]:nth-child(2):last-child)>[data-name^=point_]>p:last-child{height:114px!important}
 :is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=photo_limitation]{min-height:30px}
+/* 1022ao: mobile Contributing Factors + Daily Care card body line height 16 -> 19 (Monic) */
+.cv-m .screen[data-screen=detail] [data-name^=factor_]>p:last-of-type,.cv-m .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{line-height:19px!important}

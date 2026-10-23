@@ -117,3 +117,5 @@
 /* 1022ay: mobile open sheet — AI Insight card reserves exactly 3 body lines (150 chars): 10 + title 16 + 4 + 45 + 10 = 75, so top and bottom padding are both 10 (was min-height 93 -> bottom 18) (Monic) */
 .cv-m .result-frame .shelf-o [data-name^=AI_Insight]{min-height:75px!important}
 .cv-m .result-frame .shelf-o .ins-b{min-height:45px}
+/* 1022az: mobile collapsed sheet — View Full Report min-height 71 -> 70 so the AI Insight card beside it hugs its content (padding 10/10) (Monic) */
+.cv-m .result-frame .shelf .m-compact [data-name=btn_view_report]{min-height:70px!important}

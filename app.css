@@ -88,3 +88,8 @@
 .cv-l .screen[data-screen=detail] [data-name^=factor_]>p:nth-of-type(2){height:160px!important}
 .cv-p .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:160px!important}
 .cv-l .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{height:192px!important}
+/* 1022al: Key Points body limit lowered to 100 characters — body p 190 (5 lines) / L 152 (4) -> cards 304 / 266 */
+.cv-p .screen[data-screen=detail] [data-name^=point_]{height:304px!important}
+.cv-l .screen[data-screen=detail] [data-name^=point_]{height:266px!important}
+.cv-p .screen[data-screen=detail] [data-name^=point_]>p:last-child{height:190px!important}
+.cv-l .screen[data-screen=detail] [data-name^=point_]>p:last-child{height:152px!important}

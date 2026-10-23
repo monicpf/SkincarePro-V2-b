@@ -108,6 +108,9 @@
 /* 1022ax: mobile result — Skin Type label sat 4px below the other concern labels; align its baseline (Scott) */
 .cv-m .result-frame .ccol .st-type p.top-\[70px\]{top:66px!important}
 /* 1022ba: label-to-sheet gap back to 30 (1022ax's 15 left the 2-line names Droopy Upper / Lower Eyelid 1px from the sheet and cut Skin Type's sub text) (Monic) */
+/* 1022bb: mobile result — label-to-sheet gap 30 -> 25, both sheet states (Monic) */
+.cv-m .result-frame .ccol{bottom:calc(var(--shm-c,153px) - 1px)!important}
+.cv-m .result-frame.shelf-open .ccol{bottom:calc(var(--shm-o,453px) - 1px)!important}
 /* 1022ax: landscape result — AI Insight card text top-aligned instead of vertically centred, open + collapsed sheet (Scott) */
 .cv-l .result-frame .shelf [data-name^=AI_Insight]{align-items:flex-start!important}
 /* 1022ax: landscape header back button 99 -> 80, same size and position as the home button and the Result screen back (Scott, Monic) */

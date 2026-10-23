@@ -114,3 +114,6 @@
 .cv-l .result-frame .shelf [data-name^=AI_Insight]{align-items:flex-start!important}
 /* 1022ax: landscape header back button 99 -> 80, same size and position as the home button and the Result screen back (Scott, Monic) */
 .cv-l [data-name=crm_topper]>[data-name=btn_skincarepro_back]{inset:13.64% 93.49% 13.64% 2.34%!important}
+/* 1022ay: mobile open sheet — AI Insight card reserves exactly 3 body lines (150 chars): 10 + title 16 + 4 + 45 + 10 = 75, so top and bottom padding are both 10 (was min-height 93 -> bottom 18) (Monic) */
+.cv-m .result-frame .shelf-o [data-name^=AI_Insight]{min-height:75px!important}
+.cv-m .result-frame .shelf-o .ins-b{min-height:45px}

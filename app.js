@@ -196,7 +196,7 @@
         const P = PERM[(ix + i * 3) % PERM.length], pick = n => { const r = []; for (let k = 0; k < n; k++) r.push(T[P[k % P.length] % T.length]); return r; };
         if (f === 'all') list = T;
         else if (g.kind === 'product') list = pick(NP[ix]);
-        else if (g.kind === 'step') { const n = split(TR[ix], i), ms = MASK[n]; list = ms[(ix + i) % ms.length].filter(k => k < T.length).map(k => T[k]); }
+        else if (g.kind === 'step') { const n = Math.min(4, Math.max(3, split(TR[ix], i))), ms = MASK[n]; /* 1022as: every routine keeps at least 3 steps */ list = ms[(ix + i) % ms.length].filter(k => k < T.length).map(k => T[k]); }
         else list = pick(split(TT[ix], i));
         [...g.p.children].forEach(x => { if (isItem(x)) x.remove(); });
         list.forEach((t, k) => { const el = t.cloneNode(true); el.classList.add('rec-in'); el.style.animationDelay = (k * 60) + 'ms';

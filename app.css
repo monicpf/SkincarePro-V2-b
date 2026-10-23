@@ -100,3 +100,5 @@
 :is(.cv-p,.cv-l) .screen[data-screen=detail] [data-name=photo_limitation]{min-height:30px}
 /* 1022ao: mobile Contributing Factors + Daily Care card body line height 16 -> 19 (Monic) */
 .cv-m .screen[data-screen=detail] [data-name^=factor_]>p:last-of-type,.cv-m .screen[data-screen=detail] [data-name^=step_] [data-name=text]>p:last-child{line-height:19px!important}
+/* 1022aq: mobile concern filter chips — name hugs its text like iPad (was a fixed 177px from the Droopy Lower Eyelid frame) */
+.chiprow [data-name^=chip_]>div.ff-sf{width:auto!important;white-space:nowrap}

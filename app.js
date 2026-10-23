@@ -674,7 +674,7 @@
       case 0: return S.shelf ? null : firstVis(sc, '.shelf.cur [data-name="handelr"]');   // 1016: See All Recommendations first, then preview modes
       case 1: if (modeAt && Date.now() - modeAt >= 2000) return null; return S.dd ? firstVis(sc, '.dd-row:not(.sel):not([data-mode="focus"]), .result-frame.s-W .dd-row[data-mode="focus"]:not(.sel)') : firstVis(sc, '[data-name^="btn_skincarepro_compare_s"], [data-name^="btn_skincarepro_previewmodes"]');
       case 2: return (modeAt && Date.now() - modeAt >= 2000) ? firstVis(sc, '[data-name="btn_view_report"]') : null;
-      case 3: return firstVis(sc, '[data-name="concern_card_Redness"]');
+      case 3: return null;   // 1022aq: every concern has a detail page now — no hint on the Redness card
       case 4: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');   // 1016: concern detail points at Get Report in the navigator
       case 5: return firstVis(sc, '.fixedlayer [data-name="tab_Get Report"]');
       case 6: return firstVis(sc, ':is([data-name^="btn_skincarepro_home"],[data-name^="btn_y4b_skincarecm_home"])');

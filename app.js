@@ -8,7 +8,7 @@
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
   const init = () => ({ screen: 'result', rs: 'C', fold: false, shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
-    det: 0, fm: false, done: Array(NSTEP).fill(false), bf: null, bfo: false, bfp: null, bfOrder: null });
+    det: 0, fm: false, done: Array(NSTEP).fill(false), bf: null, bfo: false, bfp: [], bfOrder: null, bfMap: null });
   let S = init();
   let cur = null;
 
@@ -402,8 +402,8 @@
     }
     if (isHome(name)) { if (S.screen === 'share') startTake(); return true; }   // Home only works on Download Report (restarts the camera); elsewhere it would open the landing page, not part of this demo
     if (S.screen === 'result') {
-      if (name === 'btn_skincare_products_filter') { if (S.bfo) S.bfo = false; else { S.bfp = S.bf; S.bfo = true; } apply(); return true; }   // 1029a: brand filter (Products only)
-      if (name === 'bf_item') { const b = el.dataset.b; S.bfp = S.bfp === b ? null : b; bfSync(); return true; }   // re-tap clears the pick
+      if (name === 'btn_skincare_products_filter') { if (S.bfo) S.bfo = false; else { S.bfp = S.bf ? S.bf.slice() : []; S.bfo = true; } apply(); return true; }   // 1029a: brand filter (Products only)
+      if (name === 'bf_item') { const b = el.dataset.b; S.bfp = S.bfp.includes(b) ? S.bfp.filter(x => x !== b) : S.bfp.concat(b); bfSync(); return true; }   // 1029d: multi-select, re-tap clears that brand
       if (name === 'bf_cancel') { S.bfo = false; apply(); return true; }
       if (name === 'bf_apply') { bfApply(); return true; }
       if (name === 'pnl_brand_filter') return true;
@@ -801,7 +801,7 @@
 
   // ---------- 1029a: brand filter on the Result shelf (Figma pnl_skincare_filter_ipad 5185:38529 / _mobile 5184:37244) ----------
   // icon left of the Products row (Routines / Treatments have none); panel opens above it, nothing preselected;
-  // Apply = selected brand on every card + one random reshuffle; no brand = original names and order; Cancel / outside tap = no change
+  // 1029d multi-select — Apply = picked brands spread over the cards, grouped by brand, random order; no brand = original names and order; Cancel / outside tap = no change
   const BF_BRANDS = { p: ['LA MER', 'Estee Lauder', 'Helena Rubinstein', 'Clinique', 'Guerlain'], m: ['LA MER', 'Estee Lauder', 'Clinique', 'Helena Rubinstein', 'Guerlain'] };
   const BF_TIGHT = { 'Estee Lauder': 1, 'Helena Rubinstein': 1 };   // iPad Figma letter-spacing -0.743 on these two rows only
   const BF_IMG = { filter: 'assets/bf_filter.svg', filter_m: 'assets/bf_filter_m.svg', on: 'assets/bf_on.svg', off: 'assets/bf_off.svg', on_m: 'assets/bf_on_m.svg', off_m: 'assets/bf_off_m.svg' };
@@ -836,7 +836,7 @@
     pn.style.top = Math.round((br.top - fr.top) / s - gap - pn.offsetHeight) + 'px';
   }
   function bfCards(animate) {
-    const key = S.bf ? S.bf + '|' + S.bfOrder.join('/') : '';
+    const key = S.bf ? S.bfOrder.map(n => S.bfMap[n] + ':' + n).join('/') : '';
     for (const cv in canv) {
       const rv = canv[cv].querySelector('.result-frame .shelf .rv-products');
       if (!rv || !rv._o || rv._k === key) continue;
@@ -844,7 +844,7 @@
       const list = S.bf ? rv._o.slice().sort((a, b) => S.bfOrder.indexOf(bfName(a)) - S.bfOrder.indexOf(bfName(b))) : rv._o;
       list.forEach(k => {
         const t = k.querySelector('[data-name=info]>div p');
-        if (t) t.textContent = S.bf || t.dataset.o.split(' · ')[0];   // 1029b: brand name only, no category (Monic)
+        if (t) t.textContent = S.bf ? S.bfMap[bfName(k)] : t.dataset.o.split(' · ')[0];   // 1029b: brand name only, no category (Monic)
         rv.appendChild(k);
       });
       rv.scrollLeft = 0;
@@ -853,14 +853,19 @@
     }
   }
   function bfApply() {
-    S.bf = S.bfp; S.bfo = false;
-    if (S.bf) {   // one random reshuffle per Apply, never the order already on screen
+    S.bf = S.bfp.length ? S.bfp.slice() : null; S.bfo = false;
+    if (S.bf) {   // 1029d: every picked brand gets at least one card, the rest random; same-brand cards sit together, group order and order inside a group random; never the exact layout already on screen
       const names = (canv[cur] || canv.p).querySelector('.result-frame .shelf .rv-products')._o.map(bfName);
-      const now = S.bfOrder ? S.bfOrder.join('/') : names.join('/');
-      let o;
-      do { o = names.slice(); for (let i = o.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } } while (o.join('/') === now);
-      S.bfOrder = o;
-    } else S.bfOrder = null;
+      const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+      const now = S.bfOrder ? S.bfOrder.map(n => S.bfMap[n] + ':' + n).join('/') : '';
+      let o, map, k = 0;
+      do {
+        const cards = shuf(names), brands = shuf(S.bf).slice(0, cards.length);
+        map = {}; cards.forEach((n, i) => { map[n] = i < brands.length ? brands[i] : brands[Math.floor(Math.random() * brands.length)]; });
+        o = [].concat(...brands.map(b => shuf(cards.filter(n => map[n] === b))));
+      } while (o.map(n => map[n] + ':' + n).join('/') === now && ++k < 20);
+      S.bfOrder = o; S.bfMap = map;
+    } else { S.bfOrder = null; S.bfMap = null; }
     apply(); bfCards(true);
   }
   function bfSync() {
@@ -869,7 +874,7 @@
       if (!pn) continue;
       const sfx = cv === 'm' ? '_m' : '';
       pn.querySelectorAll('.bf-it').forEach(it => {
-        const on = S.bfp === it.dataset.b, im = it.querySelector('img');
+        const on = S.bfp.includes(it.dataset.b), im = it.querySelector('img');
         it.classList.toggle('sel', on);
         const src = bfImg((on ? 'on' : 'off') + sfx); if (im.getAttribute('src') !== src) im.src = src;
       });

@@ -8,7 +8,7 @@
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
   const init = () => ({ screen: 'result', rs: 'C', fold: false, shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
-    det: 0, fm: false, done: Array(NSTEP).fill(false) });
+    det: 0, fm: false, done: Array(NSTEP).fill(false), bf: null, bfo: false, bfp: null, bfOrder: null });
   let S = init();
   let cur = null;
 
@@ -65,7 +65,8 @@
     rtBusy = true;
     const dir = Math.sign(RT.indexOf(t) - RT.indexOf(S.rt)) || 1, ease = 'cubic-bezier(.22,.8,.24,1)';
     syncPill(rf, t);
-    const out = sh.querySelector('.rv-' + S.rt);
+    const out = sh.querySelector('.rv-' + S.rt), bfb = sh.querySelector('.bf-btn');   // 1029a: the brand filter icon fades with the Products row
+    if (bfb && S.rt === 'products') { const fo = bfb.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }); setTimeout(() => fo.cancel(), 200); }
     const a = out.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (-dir * 32) + 'px)' }], { duration: 150, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
     a.onfinish = () => {
       const h0 = sh.offsetHeight;
@@ -75,6 +76,7 @@
       const h1 = sh.offsetHeight;
       if (Math.abs(h1 - h0) > 1) sh.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 420, easing: ease });
       inn.animate([{ opacity: 0, transform: 'translateX(' + (dir * 48) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 360, easing: ease });
+      if (bfb && t === 'products') bfb.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 360, easing: ease });
       setTimeout(() => { rf.classList.remove('rt-anim'); rtBusy = false; }, 440);
     };
   }
@@ -112,6 +114,7 @@
 
   // measurements that only work on the visible canvas
   function syncLive(c) {
+    bfPlace(c);
     const rf = c.querySelector('.result-frame');
     if (rf) syncPill(rf, S.rt);
     if (rf) {   // height difference between the open and collapsed product shelf drives the slide
@@ -233,6 +236,7 @@
   // ---------- render state into every canvas ----------
   function apply(resetScroll) {
     setTimeout(() => fadeAll(), 560);
+    if (S.bfo && !(S.screen === 'result' && S.shelf && S.rt === 'products')) S.bfo = false;   // 1029a: brand panel only lives on the open shelf's Products row
     const key = screenKey();
     if (S.mode === 'focus' && S.rs === 'C') S.mode = 'analysis';
     for (const cv in canv) {
@@ -292,6 +296,7 @@
       }
       if (cv === cur) syncLive(c); else { c.querySelectorAll('.wr-sub').forEach(w => { if (S.rs !== 'W' || S.fold) w.style.height = '0px'; }); c.querySelectorAll('.xsub').forEach(w => { if (!(S.rs === 'X' && S.cc === w.dataset.for) || S.fold) w.style.height = '0px'; }); }
     }
+    bfSync();
     motion(520);
     requestAnimationFrame(() => { if (cur) { syncDet(canv[cur]); focusChips(canv[cur]); } placePills(); });
     setTimeout(() => { if (cur) syncDet(canv[cur]); updateHint(); }, 540);
@@ -397,6 +402,11 @@
     }
     if (isHome(name)) { if (S.screen === 'share') startTake(); return true; }   // Home only works on Download Report (restarts the camera); elsewhere it would open the landing page, not part of this demo
     if (S.screen === 'result') {
+      if (name === 'btn_skincare_products_filter') { if (S.bfo) S.bfo = false; else { S.bfp = S.bf; S.bfo = true; } apply(); return true; }   // 1029a: brand filter (Products only)
+      if (name === 'bf_item') { const b = el.dataset.b; S.bfp = S.bfp === b ? null : b; bfSync(); return true; }   // re-tap clears the pick
+      if (name === 'bf_cancel') { S.bfo = false; apply(); return true; }
+      if (name === 'bf_apply') { bfApply(); return true; }
+      if (name === 'pnl_brand_filter') return true;
       if (el.classList && el.classList.contains('dd-row')) {
         if (el.dataset.mode === 'focus' && S.rs === 'C') return true;   // focus needs a selected concern
         S.mode = el.dataset.mode; advance(1); if (!modeAt) { modeAt = Date.now(); setTimeout(updateHint, 2050); } apply(); return true;   // dropdown stays open
@@ -551,6 +561,7 @@
     return best || target;
   }
   function dispatchTap(target, x, y) {
+    if (S.bfo && !(target.closest && target.closest('.bf-pnl, .bf-btn'))) { S.bfo = false; apply(); return; }   // 1029a: a tap outside the brand panel only closes it (= Cancel)
     let n = nearBadge(target, x, y);
     const insideDd = n.closest && (n.closest('.dd') || n.closest('[data-name^="btn_skincarepro_compare_s"],[data-name^="btn_skincarepro_previewmodes"]'));
     if (S.dd && !insideDd) { S.dd = false; apply(); }   // tap outside closes the dropdown and still acts on what was tapped
@@ -563,6 +574,7 @@
   document.getElementById('stage').addEventListener('click', e => {
     if (swallowClick) { swallowClick = false; return; }
     if (Date.now() < tapUntil) return;   // already handled on touchend
+    if (S.bfo) { dispatchTap(e.target, e.clientX, e.clientY); return; }   // 1029a: brand panel open — it handles its own taps, outside taps just close it
     if (S.screen === 'result' && S.shelf && e.target.closest &&   // 1021f: a tap on empty space (photo) closes the open shelf
         !e.target.closest('.result-frame .shelf, .result-frame .ccol, .result-frame .st-type, [data-name^="btn"], [data-name*="back"], [data-name*="home"], [data-name="dropdown_photo_mode"], .vt-opt, .hint-layer')) {
       S.shelf = false; apply(); return;
@@ -786,6 +798,87 @@
   const mq = window.matchMedia('(orientation: portrait)');
   if (mq.addEventListener) mq.addEventListener('change', layout);
   window.addEventListener('load', () => { if (cur) syncLive(canv[cur]); });
+
+  // ---------- 1029a: brand filter on the Result shelf (Figma pnl_skincare_filter_ipad 5185:38529 / _mobile 5184:37244) ----------
+  // icon left of the Products row (Routines / Treatments have none); panel opens above it, nothing preselected;
+  // Apply = selected brand on every card + one random reshuffle; no brand = original names and order; Cancel / outside tap = no change
+  const BF_BRANDS = { p: ['LA MER', 'Estee Lauder', 'Helena Rubinstein', 'Clinique', 'Guerlian'], m: ['LA MER', 'Estee Lauder', 'Clinique', 'Helena Rubinstein', 'Guerlian'] };
+  const BF_TIGHT = { 'Estee Lauder': 1, 'Helena Rubinstein': 1 };   // iPad Figma letter-spacing -0.743 on these two rows only
+  const BF_IMG = { filter: 'assets/bf_filter.svg', filter_m: 'assets/bf_filter_m.svg', on: 'assets/bf_on.svg', off: 'assets/bf_off.svg', on_m: 'assets/bf_on_m.svg', off_m: 'assets/bf_off_m.svg' };
+  const bfImg = k => { const f = BF_IMG[k]; return (window.__A && window.__A[f.slice(7)]) || f; };   // packed artifact: inlined data URI
+  const bfName = card => card.getAttribute('data-name').replace(/^product_/, '');
+  function bfBuild() {
+    for (const cv in canv) {
+      const c = canv[cv], rf = c.querySelector('.result-frame'), rv = rf && rf.querySelector('.shelf .rv-products');
+      if (!rv || rf.querySelector('.bf-pnl')) continue;
+      const m = cv === 'm', sfx = m ? '_m' : '';
+      rv.classList.add('has-bf');
+      rv._o = [...rv.children];
+      rv._o.forEach(k => { const t = k.querySelector('[data-name=info]>div p'); if (t) t.dataset.o = t.textContent; });
+      const btn = document.createElement('div');
+      btn.className = 'bf-btn'; btn.setAttribute('data-name', 'btn_skincare_products_filter');
+      btn.innerHTML = '<img alt="" src="' + bfImg('filter' + sfx) + '">';
+      rv.parentElement.appendChild(btn);
+      const pn = document.createElement('div');
+      pn.className = 'bf-pnl'; pn.setAttribute('data-name', 'pnl_brand_filter');
+      pn.innerHTML = '<div class="bf-list">' + (m ? BF_BRANDS.m : BF_BRANDS.p).map(b =>
+        '<div class="bf-it" data-name="bf_item" data-b="' + b + '"><div class="bf-row"><p' + (!m && BF_TIGHT[b] ? ' class="bf-tight"' : '') + '>' + b + '</p><img alt="" src="' + bfImg('off' + sfx) + '"></div><div class="bf-ln"></div></div>').join('') +
+        '</div><div class="bf-bar"><p class="bf-cancel" data-name="bf_cancel">Cancel</p><div class="bf-apply" data-name="bf_apply"><p>Apply</p></div></div>';
+      rf.appendChild(pn);
+    }
+  }
+  function bfPlace(c) {   // the panel sits outside the clipped shelf, so it follows the icon by measurement
+    const rf = c && c.querySelector('.result-frame'), pn = rf && rf.querySelector('.bf-pnl'), btn = rf && rf.querySelector('.bf-btn');
+    if (!pn || !btn || !btn.offsetWidth) return;
+    const s = c._s || 1, fr = rf.getBoundingClientRect(), br = btn.getBoundingClientRect();
+    const gap = c.dataset.cv === 'm' ? 12 : 30;   // Figma: panel card -> icon gap
+    pn.style.left = Math.round((br.left - fr.left) / s) + 'px';
+    pn.style.top = Math.round((br.top - fr.top) / s - gap - pn.offsetHeight) + 'px';
+  }
+  function bfCards(animate) {
+    const key = S.bf ? S.bf + '|' + S.bfOrder.join('/') : '';
+    for (const cv in canv) {
+      const rv = canv[cv].querySelector('.result-frame .shelf .rv-products');
+      if (!rv || !rv._o || rv._k === key) continue;
+      rv._k = key;
+      const list = S.bf ? rv._o.slice().sort((a, b) => S.bfOrder.indexOf(bfName(a)) - S.bfOrder.indexOf(bfName(b))) : rv._o;
+      list.forEach(k => {
+        const t = k.querySelector('[data-name=info]>div p');
+        if (t) t.textContent = S.bf ? S.bf + ' · ' + (t.dataset.o.split(' · ')[1] || '') : t.dataset.o;
+        rv.appendChild(k);
+      });
+      rv.scrollLeft = 0;
+      if (animate && cv === cur && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+        list.forEach((k, i) => k.animate([{ opacity: 0, transform: 'translateX(24px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: i * 40, easing: 'cubic-bezier(.22,.8,.24,1)', fill: 'backwards' }));
+    }
+  }
+  function bfApply() {
+    S.bf = S.bfp; S.bfo = false;
+    if (S.bf) {   // one random reshuffle per Apply, never the order already on screen
+      const names = (canv[cur] || canv.p).querySelector('.result-frame .shelf .rv-products')._o.map(bfName);
+      const now = S.bfOrder ? S.bfOrder.join('/') : names.join('/');
+      let o;
+      do { o = names.slice(); for (let i = o.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; } } while (o.join('/') === now);
+      S.bfOrder = o;
+    } else S.bfOrder = null;
+    apply(); bfCards(true);
+  }
+  function bfSync() {
+    for (const cv in canv) {
+      const rf = canv[cv].querySelector('.result-frame'), pn = rf && rf.querySelector('.bf-pnl');
+      if (!pn) continue;
+      const sfx = cv === 'm' ? '_m' : '';
+      pn.querySelectorAll('.bf-it').forEach(it => {
+        const on = S.bfp === it.dataset.b, im = it.querySelector('img');
+        it.classList.toggle('sel', on);
+        const src = bfImg((on ? 'on' : 'off') + sfx); if (im.getAttribute('src') !== src) im.src = src;
+      });
+      if (S.bfo && cv === cur) bfPlace(canv[cv]);
+      pn.classList.toggle('on', S.bfo);
+    }
+    bfCards(false);
+  }
+  bfBuild();
 
   apply(true);
   layout();

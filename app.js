@@ -802,7 +802,7 @@
   // ---------- 1029a: brand filter on the Result shelf (Figma pnl_skincare_filter_ipad 5185:38529 / _mobile 5184:37244) ----------
   // icon left of the Products row (Routines / Treatments have none); panel opens above it, nothing preselected;
   // Apply = selected brand on every card + one random reshuffle; no brand = original names and order; Cancel / outside tap = no change
-  const BF_BRANDS = { p: ['LA MER', 'Estee Lauder', 'Helena Rubinstein', 'Clinique', 'Guerlian'], m: ['LA MER', 'Estee Lauder', 'Clinique', 'Helena Rubinstein', 'Guerlian'] };
+  const BF_BRANDS = { p: ['LA MER', 'Estee Lauder', 'Helena Rubinstein', 'Clinique', 'Guerlain'], m: ['LA MER', 'Estee Lauder', 'Clinique', 'Helena Rubinstein', 'Guerlain'] };
   const BF_TIGHT = { 'Estee Lauder': 1, 'Helena Rubinstein': 1 };   // iPad Figma letter-spacing -0.743 on these two rows only
   const BF_IMG = { filter: 'assets/bf_filter.svg', filter_m: 'assets/bf_filter_m.svg', on: 'assets/bf_on.svg', off: 'assets/bf_off.svg', on_m: 'assets/bf_on_m.svg', off_m: 'assets/bf_off_m.svg' };
   const bfImg = k => { const f = BF_IMG[k]; return (window.__A && window.__A[f.slice(7)]) || f; };   // packed artifact: inlined data URI
@@ -844,7 +844,7 @@
       const list = S.bf ? rv._o.slice().sort((a, b) => S.bfOrder.indexOf(bfName(a)) - S.bfOrder.indexOf(bfName(b))) : rv._o;
       list.forEach(k => {
         const t = k.querySelector('[data-name=info]>div p');
-        if (t) t.textContent = S.bf ? S.bf + ' · ' + (t.dataset.o.split(' · ')[1] || '') : t.dataset.o;
+        if (t) t.textContent = S.bf || t.dataset.o.split(' · ')[0];   // 1029b: brand name only, no category (Monic)
         rv.appendChild(k);
       });
       rv.scrollLeft = 0;

@@ -8,7 +8,7 @@
   // rs: result sub-state  C = no concern selected, W = wrinkles selected (sub rows unfolded)
   const NSTEP = 7;
   const init = () => ({ screen: 'result', rs: 'C', fold: false, shelf: false, rt: 'products', hist: [], mode: 'analysis', dd: false, rec: 'products', filter: 'all',
-    det: 0, fm: false, done: Array(NSTEP).fill(false), bf: null, bfo: false, bfp: [], bfOrder: null, bfMap: null });
+    det: 0, fm: false, done: Array(NSTEP).fill(false), insSeen: {}, bf: null, bfo: false, bfp: [], bfOrder: null, bfMap: null });
   let S = init();
   let cur = null;
 
@@ -100,15 +100,36 @@
       "Tear Trough": "Mild structural tear trough grooves appear symmetrically under both eyes, where anatomical contours create subtle surface shadowing.",
       "Skin Type": "Combination skin profile featuring pronounced T-zone oiliness alongside dry, flushed cheeks requiring zone-specific care."
   };
+  // 1102a: no concern (Skin Score / first view) = guide copy, collapsed vs open shelf; a concern's insight shows a 1.2s skeleton the first time per photo (LLM still generating)
+  const GUIDE = {
+    c: ['Tap a Score to Learn More', 'Select any score to explore each concern and how to care for it.'],
+    o: ['Picked for Your Skin', 'Switch between Products, Routines, and Treatments to explore options tailored to you.']
+  };
+  const INS_MS = 1200;
+  let insTimer = null, insFor = null;
   function syncInsight(rf) {
     const k = S.rs === 'X' ? S.cc : (S.rs === 'W' ? 'Wrinkles' : null);
+    const load = !!(k && INSIGHT[k] && !S.insSeen[k]);
+    if (load && insFor !== k) {   // switching concern mid-load restarts for the new one; a late timer never lands on another concern or a new photo
+      clearTimeout(insTimer); insFor = k;
+      const tok = S;
+      insTimer = setTimeout(() => {
+        if (S !== tok) return;
+        S.insSeen[k] = 1; insFor = null;
+        for (const cv in canv) { const r = canv[cv].querySelector('.result-frame'); if (r) syncInsight(r); }
+      }, INS_MS);
+    } else if (!load) { clearTimeout(insTimer); insFor = null; }
     rf.querySelectorAll('.shelf .ins-t').forEach(t => {
       const b = t.parentElement.querySelector('.ins-b'); if (!b) return;
-      if (!t.dataset.o) { t.dataset.o = t.textContent; b.dataset.o = b.textContent; }
-      const nt = k && INSIGHT[k] ? k : t.dataset.o, nb = k && INSIGHT[k] ? INSIGHT[k] : b.dataset.o;
-      if (t.textContent === nt && b.textContent === nb) return;
-      t.textContent = nt; b.textContent = nb;
-      [t, b].forEach(e => e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }));
+      const g = GUIDE[t.closest('.shelf-o') ? 'o' : 'c'];
+      const nt = k && INSIGHT[k] ? k : g[0], nb = k && INSIGHT[k] ? INSIGHT[k] : g[1];
+      const box = t.parentElement, was = box.classList.contains('ins-load');
+      box.classList.toggle('ins-load', load);
+      if (t.textContent !== nt) { t.textContent = nt; t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' }); }
+      if (b.textContent !== nb || (was && !load)) {
+        b.textContent = nb;
+        if (!load) b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: was ? 360 : 260, easing: 'ease-out' });
+      }
     });
   }
 

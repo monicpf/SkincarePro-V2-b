@@ -157,3 +157,10 @@
 .cv-m .result-frame .bf-pnl .bf-cancel{width:127px;height:50px;font-size:15px;font-weight:400}
 .cv-m .result-frame .bf-pnl .bf-apply{right:20px;top:12px;width:100px;height:26px;border-radius:10px}
 .cv-m .result-frame .bf-pnl .bf-apply p{font-size:15px}
+/* 1102a: AI insight loading — two shimmer bars on the body's first two lines while the concern insight is "generating"; card height unchanged */
+.result-frame .shelf .ins-load .ins-b{color:transparent!important;position:relative}
+.result-frame .shelf .ins-load .ins-b:before,.result-frame .shelf .ins-load .ins-b:after{content:"";position:absolute;left:0;height:.62em;border-radius:.31em;background:linear-gradient(90deg,#1a1a1c14 0%,#1a1a1c14 35%,#1a1a1c29 50%,#1a1a1c14 65%,#1a1a1c14 100%) 0 0/300% 100%;animation:ins-sh 1.3s linear infinite}
+.result-frame .shelf .ins-load .ins-b:before{top:calc((1lh - .62em)/2);width:100%}
+.result-frame .shelf .ins-load .ins-b:after{top:calc(1lh + (1lh - .62em)/2);width:64%}
+@keyframes ins-sh{0%{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.result-frame .shelf .ins-load .ins-b:before,.result-frame .shelf .ins-load .ins-b:after{animation:none}}
